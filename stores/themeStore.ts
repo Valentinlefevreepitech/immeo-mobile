@@ -19,7 +19,7 @@ export const useThemeStore = create<ThemeState>()(
       resolvedTheme: () => {
         const { mode } = get();
         if (mode === 'system') {
-          return Appearance.getColorScheme() ?? 'light';
+          return Appearance.getColorScheme() === 'dark' ? 'dark' : 'light';
         }
         return mode;
       },

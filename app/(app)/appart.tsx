@@ -1,137 +1,273 @@
-import { useCallback } from 'react';
-import { Alert } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
-import { YStack, XStack, Text, View, Separator } from 'tamagui';
-import { Car, CreditCard, Info, FolderOpen, Users } from 'lucide-react-native';
+import { useCallback, useRef } from 'react';
+import { Animated, Easing, ScrollView, View as RNView, useWindowDimensions } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Check, Clock, FileText } from 'lucide-react-native';
 import { colors } from '@/constants/colors';
-import { StatCard } from '@/components/ui/StatCard';
-import { useApartment } from '@/hooks/useApartment';
-import { InfoRow } from '@/components/features/appart/InfoRow';
-import { SectionCard } from '@/components/features/appart/SectionCard';
-import { ParkingCard } from '@/components/features/appart/ParkingCard';
-import { PaymentRow } from '@/components/features/appart/PaymentRow';
-import { DocumentRow } from '@/components/features/appart/DocumentRow';
-import { ColocataireRow } from '@/components/features/appart/ColocataireRow';
+import { useRoleStore } from '@/stores/roleStore';
+import { MOCK_FINANCES, MOCK_LOGEMENT } from '@/fixtures/apartment';
+import { ListRow, RowSeparator } from '@/components/ui/ListRow';
+import { PulsingDot } from '@/components/ui/PulsingDot';
 
-export default function AppartScreen() {
-  const { apartment, parking, loyer, payments, documents, occupants } = useApartment();
+/**
+ * Entrée « porte qui s'ouvre » du prototype : rotateY -58° → 0,
+ * pivot sur le bord gauche, rejouée à chaque focus (après le tour de clé).
+ */
+function DoorTransition({ children }: { children: React.ReactNode }) {
+  const anim = useRef(new Animated.Value(1)).current;
+  const { width } = useWindowDimensions();
 
-  const handlePaymentPress = useCallback((month: string, detail: string) => {
-    Alert.alert(month, detail);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      anim.setValue(0);
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 650,
+        easing: Easing.bezier(0.22, 1, 0.36, 1),
+        useNativeDriver: true,
+      }).start();
+    }, [anim]),
+  );
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 120 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <YStack paddingHorizontal={20} paddingTop={16} paddingBottom={12} gap={4}>
-          <Text fontFamily="$body" fontSize={14} fontWeight="400" color={colors.gray[500]}>
-            Residence Les Jardins
-          </Text>
-          <Text
-            fontFamily="$heading"
-            fontSize={28}
-            fontWeight="700"
-            color={colors.gray[900]}
-            accessibilityRole="header"
+    <Animated.View
+      style={{
+        flex: 1,
+        opacity: anim.interpolate({ inputRange: [0, 0.55, 1], outputRange: [0, 1, 1] }),
+        transform: [
+          { perspective: 1400 },
+          { translateX: -width / 2 },
+          { rotateY: anim.interpolate({ inputRange: [0, 1], outputRange: ['-58deg', '0deg'] }) },
+          { translateX: width / 2 },
+        ],
+      }}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
+export default function AppartScreen() {
+  const router = useRouter();
+  const role = useRoleStore((s) => s.role);
+  const finance = MOCK_FINANCES[role];
+
+  return (
+    <RNView style={{ flex: 1, backgroundColor: colors.background }}>
+      <DoorTransition>
+        <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: 130 }}
+            showsVerticalScrollIndicator={false}
           >
-            Mon appartement
-          </Text>
-        </YStack>
-
-        <YStack paddingHorizontal={20} gap={24}>
-          {/* Infos generales */}
-          <SectionCard title="Informations" icon={<Info size={20} color={colors.primary[500]} />}>
-            <InfoRow label="Numero" value={apartment.numero} />
-            <Separator borderColor={colors.gray[100]} />
-            <InfoRow label="Etage" value={apartment.etage} />
-            <Separator borderColor={colors.gray[100]} />
-            <InfoRow label="Surface" value={apartment.surface} />
-            <Separator borderColor={colors.gray[100]} />
-            <InfoRow label="Pieces" value={apartment.pieces} />
-            <Separator borderColor={colors.gray[100]} />
-            <InfoRow label="Type" value={apartment.type} />
-          </SectionCard>
-
-          {/* Parking */}
-          <YStack gap={12}>
-            <XStack gap={8} alignItems="center" accessibilityRole="header">
-              <Car size={20} color={colors.secondary[500]} />
-              <Text fontFamily="$heading" fontSize={18} fontWeight="700" color={colors.gray[900]}>
-                Place de parking
+            <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={8}>
+              <Text
+                fontFamily="$heading"
+                fontSize={32}
+                fontWeight="800"
+                letterSpacing={-0.8}
+                color={colors.text.primary}
+                role="heading"
+              >
+                Mon appart
               </Text>
-            </XStack>
-            <ParkingCard parking={parking} />
-          </YStack>
+            </YStack>
 
-          {/* Loyer & charges */}
-          <YStack gap={12}>
-            <XStack gap={8} alignItems="center" accessibilityRole="header">
-              <CreditCard size={20} color={colors.success} />
-              <Text fontFamily="$heading" fontSize={18} fontWeight="700" color={colors.gray[900]}>
-                Loyer & charges
-              </Text>
-            </XStack>
+            <YStack paddingHorizontal={24} gap={26}>
+              {/* Hero finance (rôle-dépendant) */}
+              <YStack gap={10} paddingTop={12}>
+                <Text
+                  fontFamily="$body"
+                  fontSize={13}
+                  fontWeight="500"
+                  color={colors.text.muted}
+                  textTransform="uppercase"
+                  letterSpacing={0.8}
+                >
+                  {finance.title}
+                </Text>
+                <XStack alignItems="flex-end" gap={6}>
+                  <Text
+                    fontFamily="$heading"
+                    fontSize={52}
+                    fontWeight="800"
+                    letterSpacing={-2}
+                    lineHeight={52}
+                    color={colors.text.primary}
+                  >
+                    {finance.amount}
+                  </Text>
+                  <Text
+                    fontFamily="$body"
+                    fontSize={16}
+                    fontWeight="500"
+                    color={colors.text.muted}
+                    paddingBottom={4}
+                  >
+                    {finance.suffix}
+                  </Text>
+                </XStack>
+                <Text fontFamily="$body" fontSize={13} fontWeight="400" color={colors.text.muted}>
+                  {finance.detail}
+                </Text>
+                <XStack marginTop={4}>
+                  <XStack
+                    alignItems="center"
+                    gap={8}
+                    backgroundColor={colors.primary[50]}
+                    borderRadius={999}
+                    paddingVertical={8}
+                    paddingHorizontal={16}
+                  >
+                    <PulsingDot color={colors.primary[500]} size={7} pulse />
+                    <Text
+                      fontFamily="$body"
+                      fontSize={13}
+                      fontWeight="600"
+                      color={colors.primary[500]}
+                    >
+                      {finance.badge}
+                    </Text>
+                  </XStack>
+                </XStack>
+              </YStack>
 
-            <XStack gap={12}>
-              <StatCard value={`${loyer.loyer} €`} label="Loyer" />
-              <StatCard
-                value={`${loyer.charges} €`}
-                label="Charges"
-                valueColor={colors.secondary[500]}
-              />
-              <StatCard
-                value={`${loyer.total} €`}
-                label="Total / mois"
-                valueColor={colors.gray[900]}
-              />
-            </XStack>
+              {/* Historique paiements / appels de fonds */}
+              <YStack gap={4}>
+                <Text
+                  fontFamily="$heading"
+                  fontSize={20}
+                  fontWeight="700"
+                  letterSpacing={-0.4}
+                  color={colors.text.primary}
+                  marginBottom={8}
+                  role="heading"
+                >
+                  {finance.histTitle}
+                </Text>
+                {finance.rows.map((row, index) => (
+                  <YStack key={row.id}>
+                    {index > 0 && <RowSeparator />}
+                    <ListRow paddingVertical={12} aria-label={row.title}>
+                      <View
+                        width={40}
+                        height={40}
+                        borderRadius={20}
+                        backgroundColor={
+                          row.status === 'paid' ? colors.successBg : colors.surface.card
+                        }
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        {row.status === 'paid' ? (
+                          <Check size={18} color={colors.successDark} strokeWidth={2} />
+                        ) : (
+                          <Clock size={18} color={colors.text.muted} strokeWidth={2} />
+                        )}
+                      </View>
+                      <YStack flex={1}>
+                        <Text
+                          fontFamily="$body"
+                          fontSize={15}
+                          fontWeight="600"
+                          color={colors.text.primary}
+                        >
+                          {row.title}
+                        </Text>
+                        <Text
+                          fontFamily="$body"
+                          fontSize={13}
+                          fontWeight="400"
+                          color={colors.text.muted}
+                        >
+                          {row.subtitle}
+                        </Text>
+                      </YStack>
+                      <Text
+                        fontFamily="$heading"
+                        fontSize={15}
+                        fontWeight="700"
+                        color={row.status === 'paid' ? colors.text.primary : colors.text.muted}
+                      >
+                        {row.amount}
+                      </Text>
+                    </ListRow>
+                  </YStack>
+                ))}
+              </YStack>
 
-            <View backgroundColor={colors.white} borderRadius={16} paddingHorizontal={20}>
-              {payments.map((payment, index) => (
-                <View key={payment.id}>
-                  {index > 0 && <Separator borderColor={colors.gray[100]} />}
-                  <PaymentRow
-                    month={payment.month}
-                    amount={payment.amount}
-                    status={payment.status}
-                    onPress={() => handlePaymentPress(payment.month, payment.detail)}
-                  />
-                </View>
-              ))}
-            </View>
-          </YStack>
-
-          {/* Documents */}
-          <SectionCard title="Documents" icon={<FolderOpen size={20} color={colors.info} />}>
-            {documents.map((doc, index) => (
-              <View key={doc.name}>
-                {index > 0 && <Separator borderColor={colors.gray[100]} />}
-                <DocumentRow name={doc.name} type={doc.type} date={doc.date} />
-              </View>
-            ))}
-          </SectionCard>
-
-          {/* Colocataires */}
-          <SectionCard title="Occupants" icon={<Users size={20} color={colors.primary[500]} />}>
-            {occupants.map((occupant, index) => (
-              <View key={occupant.name}>
-                {index > 0 && <Separator borderColor={colors.gray[100]} />}
-                <ColocataireRow
-                  name={occupant.name}
-                  initials={occupant.initials}
-                  isPrincipal={occupant.isPrincipal}
-                  phone={occupant.phone}
-                />
-              </View>
-            ))}
-          </SectionCard>
-        </YStack>
-      </ScrollView>
-    </SafeAreaView>
+              {/* Le logement */}
+              <YStack gap={12}>
+                <Text
+                  fontFamily="$heading"
+                  fontSize={20}
+                  fontWeight="700"
+                  letterSpacing={-0.4}
+                  color={colors.text.primary}
+                  role="heading"
+                >
+                  Le logement
+                </Text>
+                <XStack flexWrap="wrap" gap={12}>
+                  {MOCK_LOGEMENT.map((tile) => (
+                    <YStack
+                      key={tile.id}
+                      width="47%"
+                      flexGrow={1}
+                      backgroundColor={colors.surface.card}
+                      borderRadius={20}
+                      padding={18}
+                      gap={2}
+                    >
+                      <Text
+                        fontFamily="$heading"
+                        fontSize={24}
+                        fontWeight="800"
+                        letterSpacing={-0.5}
+                        color={colors.text.primary}
+                      >
+                        {tile.value}
+                      </Text>
+                      <Text
+                        fontFamily="$body"
+                        fontSize={12}
+                        fontWeight="500"
+                        color={colors.text.muted}
+                      >
+                        {tile.label}
+                      </Text>
+                    </YStack>
+                  ))}
+                  <YStack
+                    width="47%"
+                    flexGrow={1}
+                    backgroundColor={colors.primary[50]}
+                    borderRadius={20}
+                    padding={18}
+                    gap={2}
+                    pressStyle={{ scale: 0.96 }}
+                    onPress={() => router.push('/documents')}
+                    role="button"
+                    aria-label="Mes documents"
+                  >
+                    <FileText size={22} color={colors.primary[500]} strokeWidth={1.8} />
+                    <Text
+                      fontFamily="$body"
+                      fontSize={12}
+                      fontWeight="600"
+                      color={colors.primary[500]}
+                      marginTop={4}
+                    >
+                      Mes documents →
+                    </Text>
+                  </YStack>
+                </XStack>
+              </YStack>
+            </YStack>
+          </ScrollView>
+        </SafeAreaView>
+      </DoorTransition>
+    </RNView>
   );
 }

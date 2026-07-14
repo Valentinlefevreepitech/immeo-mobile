@@ -54,6 +54,66 @@ export const MOCK_ANNONCES = [
   },
 ];
 
+// ─────────────────────────────────────────────────────────────
+// Prototype v2 : panneau d'affichage, fil d'actualité, messagerie syndic
+// ─────────────────────────────────────────────────────────────
+
+export const MOCK_PANNEAU = [
+  {
+    id: 'reglement',
+    badge: 'SYNDIC',
+    badgeVariant: 'teal' as const,
+    date: '10 mars',
+    title: 'Mise à jour du règlement intérieur',
+    content: 'Le nouveau règlement est disponible dans la section Documents de votre espace.',
+  },
+  {
+    id: 'encombrants',
+    badge: 'GARDIEN',
+    badgeVariant: 'blue' as const,
+    date: '8 mars',
+    title: 'Collecte des encombrants',
+    content: 'Samedi 21 mars. Déposez vos objets dans le local poubelles la veille au soir.',
+  },
+];
+
+export const MOCK_FIL_ACTUALITE = [
+  {
+    id: 'ravalement',
+    color: 'info' as const,
+    title: 'Ravalement façade — 40%',
+    subtitle: "Échafaudage côté rue jusqu'à fin avril",
+  },
+  {
+    id: 'fete-voisins',
+    color: 'primary' as const,
+    title: 'Fête des voisins le 5 juin',
+    subtitle: 'Inscriptions ouvertes dans le hall',
+  },
+];
+
+// Pas de chat P2P résident dans le P0 — uniquement syndic + gardien.
+export const MOCK_CONVERSATIONS_V2 = [
+  {
+    id: 'foncia',
+    name: 'Cabinet Foncia',
+    initials: 'CF',
+    gradient: true,
+    message: 'Le plombier passera mercredi entre 9h et 12h',
+    time: '14:32',
+    unread: 1,
+  },
+  {
+    id: 'gardien',
+    name: 'Michel Durand · Gardien',
+    initials: 'MD',
+    gradient: false,
+    message: 'Colis récupéré à la loge 👍',
+    time: 'Hier',
+    unread: 0,
+  },
+];
+
 export const MOCK_SONDAGE = {
   question: 'Installation de bornes de recharge ?',
   options: [

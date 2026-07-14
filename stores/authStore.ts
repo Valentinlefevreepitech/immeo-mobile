@@ -33,6 +33,20 @@ interface AuthState {
 
 const ALLOWED_ROLES = ['resident', 'tenant'];
 
+// Session fictive quand aucun backend n'est configuré (dev uniquement) :
+// permet de naviguer dans l'app alimentée par les fixtures.
+const DEMO_USER: UserProfile = {
+  id: 'demo',
+  email: 'valentin.lefevre@epitech.digital',
+  fullName: 'Valentin Lefevre',
+  initials: 'VL',
+  role: 'tenant',
+  firstName: 'Valentin',
+  lastName: 'Lefevre',
+  coproprieteId: null,
+  apartmentId: null,
+};
+
 function buildProfileFromAuth(authUser: User): UserProfile {
   const meta = authUser.user_metadata || {};
   const firstName = meta.first_name || '';
@@ -67,6 +81,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   initialize: async () => {
     if (!supabase) {
+      if (__DEV__) {
+        set({ user: DEMO_USER, isLoggedIn: true, isInitialized: true });
+        return;
+      }
       set({ isInitialized: true });
       return;
     }

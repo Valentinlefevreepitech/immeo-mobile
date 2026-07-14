@@ -1,144 +1,346 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollView, View as RNView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { YStack, Text } from 'tamagui';
-import { Calendar, Wrench, AlertCircle, Megaphone } from 'lucide-react-native';
+import * as Clipboard from 'expo-clipboard';
+import { YStack, XStack, Text, View } from 'tamagui';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  Bell,
+  Calendar,
+  Check,
+  ChevronRight,
+  CirclePlus,
+  Copy,
+  FileText,
+  Wrench,
+} from 'lucide-react-native';
 import { colors } from '@/constants/colors';
-import { useHome } from '@/hooks/useHome';
-import { HeroHeader } from '@/components/features/home/HeroHeader';
-import { CodeImmeubleCard } from '@/components/features/home/CodeImmeubleCard';
-import { GardienCard } from '@/components/features/home/GardienCard';
-import { DateRow } from '@/components/features/home/DateRow';
-import { AlerteCard } from '@/components/features/home/AlerteCard';
+import { useAuthStore } from '@/stores/authStore';
+import { MOCK_BUILDING, MOCK_UPCOMING, MOCK_HOME_ALERTS } from '@/fixtures/home';
+import { Avatar } from '@/components/ui/Avatar';
+import { GradientCard } from '@/components/ui/GradientCard';
+import { ListRow, RowSeparator } from '@/components/ui/ListRow';
+import { PulsingDot } from '@/components/ui/PulsingDot';
+import { PageTransition } from '@/components/ui/PageTransition';
+
+function QuickAction({
+  icon,
+  label,
+  accent = false,
+  badge = false,
+  onPress,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  accent?: boolean;
+  badge?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <YStack
+      alignItems="center"
+      gap={8}
+      width={72}
+      onPress={onPress}
+      pressStyle={{ opacity: 0.7 }}
+      role="button"
+      aria-label={label}
+    >
+      <View
+        width={56}
+        height={56}
+        borderRadius={28}
+        backgroundColor={accent ? colors.primary[50] : colors.surface.card}
+        alignItems="center"
+        justifyContent="center"
+        pressStyle={{ scale: 0.92 }}
+      >
+        {icon}
+        {badge && (
+          <View
+            position="absolute"
+            top={2}
+            right={2}
+            width={10}
+            height={10}
+            borderRadius={5}
+            backgroundColor={colors.warning}
+            borderWidth={2}
+            borderColor={colors.white}
+          />
+        )}
+      </View>
+      <Text fontFamily="$body" fontSize={12} fontWeight="500" color={colors.text.primary}>
+        {label}
+      </Text>
+    </YStack>
+  );
+}
 
 export default function AccueilScreen() {
-  const { building, gardien, dates, alerts } = useHome();
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const [copied, setCopied] = useState(false);
 
-  const handleDatePress = useCallback(
-    (item: { label: string; detail: string; type: string }) => {
-      router.push({
-        pathname: '/alert-detail',
-        params: {
-          title: item.label,
-          detail: item.detail,
-          type: item.type === 'calendar' ? 'primary' : 'info',
-        },
-      });
-    },
-    [router],
-  );
+  const firstName = user?.firstName || 'Valentin';
+  const initials = user?.initials || 'VL';
 
-  const handleAlertPress = useCallback(
-    (item: { title: string; detail: string; type: string }) => {
-      router.push({
-        pathname: '/alert-detail',
-        params: { title: item.title, detail: item.detail, type: item.type },
-      });
-    },
-    [router],
-  );
+  const handleCopyCode = useCallback(async () => {
+    await Clipboard.setStringAsync(MOCK_BUILDING.code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, []);
 
-  // DEBUG: Test with pure RN ScrollView
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 120 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <HeroHeader buildingName={building.name} />
-
-        <YStack paddingHorizontal={20} gap={20} marginTop={-4}>
-          <CodeImmeubleCard code={building.code} />
-          <GardienCard name={gardien.name} phone={gardien.phone} horaires={gardien.horaires} />
-
-          {/* Dates importantes */}
-          <YStack gap={12}>
-            <Text
-              fontFamily="$heading"
-              fontSize={20}
-              fontWeight="700"
-              color={colors.gray[900]}
-              accessibilityRole="header"
+      <PageTransition>
+        <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: 130 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Header */}
+            <XStack
+              alignItems="center"
+              gap={12}
+              paddingHorizontal={24}
+              paddingTop={16}
+              paddingBottom={20}
             >
-              Dates importantes
-            </Text>
-            {dates.map((item) => {
-              const icon =
-                item.type === 'calendar' ? (
-                  <Calendar size={22} color={colors.primary[500]} />
-                ) : (
-                  <Wrench size={22} color={colors.info} />
-                );
-              const iconColor = item.type === 'calendar' ? colors.primary[500] : colors.info;
+              <Avatar initials={initials} size={40} />
+              <YStack flex={1}>
+                <Text fontFamily="$body" fontSize={13} fontWeight="500" color={colors.text.muted}>
+                  Bonjour {firstName}
+                </Text>
+                <Text
+                  fontFamily="$heading"
+                  fontSize={17}
+                  fontWeight="700"
+                  letterSpacing={-0.3}
+                  color={colors.text.primary}
+                >
+                  {MOCK_BUILDING.name}
+                </Text>
+              </YStack>
+              <View
+                width={40}
+                height={40}
+                borderRadius={20}
+                backgroundColor={colors.surface.card}
+                alignItems="center"
+                justifyContent="center"
+                pressStyle={{ scale: 0.9 }}
+                onPress={() => router.push('/notifications')}
+                role="button"
+                aria-label="Notifications"
+              >
+                <Bell size={18} color={colors.text.primary} strokeWidth={2} />
+                <View position="absolute" top={4} right={5}>
+                  <PulsingDot color={colors.warning} size={7} pulse />
+                </View>
+              </View>
+            </XStack>
 
-              return (
-                <DateRow
-                  key={item.id}
-                  icon={icon}
-                  iconColor={iconColor}
-                  label={item.label}
-                  date={item.date}
-                  onPress={() => handleDatePress(item)}
+            <YStack paddingHorizontal={24} gap={26}>
+              {/* Carte hero : code immeuble */}
+              <GradientCard radius={28} padding={26}>
+                <YStack gap={14}>
+                  <Text
+                    fontFamily="$body"
+                    fontSize={13}
+                    fontWeight="600"
+                    color={colors.primary[600]}
+                    letterSpacing={0.5}
+                    textTransform="uppercase"
+                  >
+                    Code immeuble
+                  </Text>
+                  <Text
+                    fontFamily="$heading"
+                    fontSize={42}
+                    fontWeight="800"
+                    letterSpacing={10}
+                    lineHeight={42}
+                    color={colors.primary[900]}
+                  >
+                    {MOCK_BUILDING.code}
+                  </Text>
+                  <XStack>
+                    <XStack
+                      alignItems="center"
+                      gap={8}
+                      backgroundColor={colors.white}
+                      borderRadius={999}
+                      paddingVertical={9}
+                      paddingHorizontal={16}
+                      pressStyle={{ scale: 0.95 }}
+                      onPress={handleCopyCode}
+                      role="button"
+                      aria-label="Copier le code immeuble"
+                    >
+                      {copied ? (
+                        <Check size={14} color={colors.primary[500]} strokeWidth={2.5} />
+                      ) : (
+                        <Copy size={14} color={colors.primary[500]} strokeWidth={2} />
+                      )}
+                      <Text
+                        fontFamily="$body"
+                        fontSize={13}
+                        fontWeight="600"
+                        color={colors.primary[500]}
+                      >
+                        {copied ? 'Copié' : 'Copier'}
+                      </Text>
+                    </XStack>
+                  </XStack>
+                </YStack>
+              </GradientCard>
+
+              {/* Actions rapides */}
+              <XStack justifyContent="space-between">
+                <QuickAction
+                  icon={<CirclePlus size={22} color={colors.primary[500]} strokeWidth={1.8} />}
+                  label="Signaler"
+                  accent
+                  onPress={() => router.push('/signaler')}
                 />
-              );
-            })}
-          </YStack>
-
-          {/* Alertes */}
-          <YStack gap={12}>
-            <Text
-              fontFamily="$heading"
-              fontSize={20}
-              fontWeight="700"
-              color={colors.gray[900]}
-              accessibilityRole="header"
-            >
-              Alertes
-            </Text>
-            {alerts.map((item) => {
-              let icon: React.ReactNode;
-              let iconColor: string;
-              let bgColor: string;
-              let textColor: string;
-
-              switch (item.type) {
-                case 'warning':
-                  icon = <AlertCircle size={18} color={colors.warning} />;
-                  iconColor = colors.warning;
-                  bgColor = colors.warningBg;
-                  textColor = colors.warningText;
-                  break;
-                case 'info':
-                  icon = <Wrench size={18} color={colors.info} />;
-                  iconColor = colors.info;
-                  bgColor = colors.infoBg;
-                  textColor = colors.infoText;
-                  break;
-                case 'primary':
-                  icon = <Megaphone size={18} color={colors.primary[500]} />;
-                  iconColor = colors.primary[500];
-                  bgColor = colors.primary[50];
-                  textColor = colors.primary[800];
-                  break;
-              }
-
-              return (
-                <AlerteCard
-                  key={item.id}
-                  icon={icon}
-                  iconColor={iconColor}
-                  bgColor={bgColor}
-                  textColor={textColor}
-                  title={item.title}
-                  subtitle={item.subtitle}
-                  onPress={() => handleAlertPress(item)}
+                <QuickAction
+                  icon={<Wrench size={22} color={colors.text.primary} strokeWidth={1.8} />}
+                  label="Incidents"
+                  onPress={() => router.push('/incidents')}
                 />
-              );
-            })}
-          </YStack>
-        </YStack>
-      </ScrollView>
+                <QuickAction
+                  icon={<FileText size={22} color={colors.text.primary} strokeWidth={1.8} />}
+                  label="Documents"
+                  onPress={() => router.push('/documents')}
+                />
+                <QuickAction
+                  icon={<Calendar size={22} color={colors.text.primary} strokeWidth={1.8} />}
+                  label="AG"
+                  badge
+                  onPress={() => router.push('/ag')}
+                />
+              </XStack>
+
+              {/* À venir */}
+              <YStack gap={4}>
+                <Text
+                  fontFamily="$heading"
+                  fontSize={20}
+                  fontWeight="700"
+                  letterSpacing={-0.4}
+                  color={colors.text.primary}
+                  marginBottom={8}
+                  role="heading"
+                >
+                  À venir
+                </Text>
+                {MOCK_UPCOMING.map((item, index) => (
+                  <YStack key={item.id}>
+                    {index > 0 && <RowSeparator />}
+                    <ListRow
+                      onPress={item.route ? () => router.push(item.route!) : undefined}
+                      aria-label={item.title}
+                    >
+                      <View
+                        width={44}
+                        height={44}
+                        borderRadius={16}
+                        backgroundColor={item.accent ? colors.primary[50] : colors.surface.card}
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        <Text
+                          fontFamily="$body"
+                          fontSize={10}
+                          fontWeight="600"
+                          textTransform="uppercase"
+                          color={item.accent ? colors.primary[500] : colors.text.muted}
+                        >
+                          {item.month}
+                        </Text>
+                        <Text
+                          fontFamily="$heading"
+                          fontSize={16}
+                          fontWeight="800"
+                          lineHeight={16}
+                          color={item.accent ? colors.primary[500] : colors.text.primary}
+                        >
+                          {item.day}
+                        </Text>
+                      </View>
+                      <YStack flex={1}>
+                        <Text
+                          fontFamily="$body"
+                          fontSize={15}
+                          fontWeight="600"
+                          color={colors.text.primary}
+                        >
+                          {item.title}
+                        </Text>
+                        <Text
+                          fontFamily="$body"
+                          fontSize={13}
+                          fontWeight="400"
+                          color={colors.text.muted}
+                        >
+                          {item.subtitle}
+                        </Text>
+                      </YStack>
+                      <ChevronRight size={16} color={colors.text.disabled} strokeWidth={2} />
+                    </ListRow>
+                  </YStack>
+                ))}
+              </YStack>
+
+              {/* Alertes */}
+              <YStack gap={4}>
+                <Text
+                  fontFamily="$heading"
+                  fontSize={20}
+                  fontWeight="700"
+                  letterSpacing={-0.4}
+                  color={colors.text.primary}
+                  marginBottom={8}
+                  role="heading"
+                >
+                  Alertes
+                </Text>
+                {MOCK_HOME_ALERTS.map((item, index) => (
+                  <YStack key={item.id}>
+                    {index > 0 && <RowSeparator />}
+                    <ListRow aria-label={item.title}>
+                      <PulsingDot
+                        color={item.color === 'warning' ? colors.warning : colors.primary[500]}
+                        pulse={item.pulse}
+                      />
+                      <YStack flex={1}>
+                        <Text
+                          fontFamily="$body"
+                          fontSize={15}
+                          fontWeight="600"
+                          color={colors.text.primary}
+                        >
+                          {item.title}
+                        </Text>
+                        <Text
+                          fontFamily="$body"
+                          fontSize={13}
+                          fontWeight="400"
+                          color={colors.text.muted}
+                        >
+                          {item.subtitle}
+                        </Text>
+                      </YStack>
+                      <ChevronRight size={16} color={colors.text.disabled} strokeWidth={2} />
+                    </ListRow>
+                  </YStack>
+                ))}
+              </YStack>
+            </YStack>
+          </ScrollView>
+        </SafeAreaView>
+      </PageTransition>
     </RNView>
   );
 }

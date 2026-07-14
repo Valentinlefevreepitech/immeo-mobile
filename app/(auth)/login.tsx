@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Mail, Lock, User, Eye, EyeOff, Building2, UserPlus } from 'lucide-react-native';
@@ -138,7 +139,7 @@ function InputField({
           keyboardType={keyboardType || 'default'}
           autoCapitalize={autoCapitalize || 'sentences'}
           onSubmitEditing={onSubmitEditing}
-          accessibilityLabel={label}
+          aria-label={label}
           style={{
             fontFamily: 'Inter',
             fontSize: 15,
@@ -158,10 +159,8 @@ function InputField({
           justifyContent="center"
           pressStyle={{ opacity: 0.5 }}
           onPress={onToggle}
-          accessibilityRole="button"
-          accessibilityLabel={
-            secureTextEntry ? 'Afficher le mot de passe' : 'Masquer le mot de passe'
-          }
+          role="button"
+          aria-label={secureTextEntry ? 'Afficher le mot de passe' : 'Masquer le mot de passe'}
         >
           {secureTextEntry ? (
             <Eye size={20} color={colors.gray[400]} />
@@ -177,12 +176,7 @@ function InputField({
 /* ── Tab toggle ── */
 function AuthTabs({ active, onSwitch }: { active: AuthTab; onSwitch: (tab: AuthTab) => void }) {
   return (
-    <XStack
-      backgroundColor={colors.gray[100]}
-      borderRadius={14}
-      padding={4}
-      accessibilityRole="tablist"
-    >
+    <XStack backgroundColor={colors.gray[100]} borderRadius={14} padding={4} role="tablist">
       <View
         flex={1}
         paddingVertical={12}
@@ -200,9 +194,9 @@ function AuthTabs({ active, onSwitch }: { active: AuthTab; onSwitch: (tab: AuthT
           : {})}
         pressStyle={{ opacity: 0.8 }}
         onPress={() => onSwitch('login')}
-        accessibilityRole="tab"
-        accessibilityLabel="Connexion"
-        accessibilityState={{ selected: active === 'login' }}
+        role="tab"
+        aria-label="Connexion"
+        aria-selected={active === 'login'}
       >
         <Text
           fontFamily="$body"
@@ -230,9 +224,9 @@ function AuthTabs({ active, onSwitch }: { active: AuthTab; onSwitch: (tab: AuthT
           : {})}
         pressStyle={{ opacity: 0.8 }}
         onPress={() => onSwitch('register')}
-        accessibilityRole="tab"
-        accessibilityLabel="Inscription"
-        accessibilityState={{ selected: active === 'register' }}
+        role="tab"
+        aria-label="Inscription"
+        aria-selected={active === 'register'}
       >
         <Text
           fontFamily="$body"
@@ -284,8 +278,8 @@ function SocialButton({
       backgroundColor={colors.white}
       pressStyle={{ opacity: 0.7, backgroundColor: colors.gray[50] }}
       onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`Se connecter avec ${label}`}
+      role="button"
+      aria-label={`Se connecter avec ${label}`}
     >
       {icon}
       <Text fontFamily="$body" fontSize={14} fontWeight="500" color={colors.gray[700]}>
@@ -375,9 +369,8 @@ function LoginForm() {
           onPress={() =>
             Alert.alert('Mot de passe oublie', 'Un email de reinitialisation vous sera envoye.')
           }
-          accessibilityRole="link"
-          accessibilityLabel="Mot de passe oublie"
-          accessibilityHint="Double-tapez pour reinitialiser votre mot de passe"
+          role="link"
+          aria-label="Mot de passe oublie"
         >
           Mot de passe oublie ?
         </Text>
@@ -575,8 +568,8 @@ function RegisterForm() {
           fontWeight="500"
           pressStyle={{ opacity: 0.6 }}
           onPress={() => Alert.alert('CGU', 'Les conditions generales seront bientot disponibles.')}
-          accessibilityRole="link"
-          accessibilityLabel="Conditions generales d'utilisation"
+          role="link"
+          aria-label="Conditions generales d'utilisation"
         >
           conditions generales
         </Text>{' '}
@@ -591,8 +584,8 @@ function RegisterForm() {
               'La politique de confidentialite sera bientot disponible.',
             )
           }
-          accessibilityRole="link"
-          accessibilityLabel="Politique de confidentialite"
+          role="link"
+          aria-label="Politique de confidentialite"
         >
           politique de confidentialite
         </Text>
@@ -623,6 +616,7 @@ const heroContent = {
 };
 
 export default function AuthScreen() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<AuthTab>('login');
   const hero = heroContent[activeTab];
 
@@ -715,6 +709,28 @@ export default function AuthScreen() {
                   }
                 />
               </XStack>
+
+              {/* Onboarding sur invitation */}
+              <Text
+                fontFamily="$body"
+                fontSize={13}
+                fontWeight="400"
+                color={colors.gray[500]}
+                textAlign="center"
+              >
+                Vous avez reçu une invitation de votre syndic ?{' '}
+                <Text
+                  fontSize={13}
+                  color={colors.primary[500]}
+                  fontWeight="600"
+                  pressStyle={{ opacity: 0.6 }}
+                  onPress={() => router.push('/(auth)/invitation')}
+                  role="link"
+                  aria-label="Activer mon compte sur invitation"
+                >
+                  Activer mon compte
+                </Text>
+              </Text>
             </YStack>
           </ScrollView>
         </View>
