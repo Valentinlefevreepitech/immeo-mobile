@@ -5,6 +5,10 @@ export interface MockDocument {
   title: string;
   subtitle: string;
   action?: 'download' | 'chevron';
+  /** Chemin de stockage prive (tenant-documents) : necessite une URL signee. */
+  filePath?: string;
+  /** URL publique deja utilisable directement (documents copropriete). */
+  url?: string;
 }
 
 export const MOCK_DOCS_ALERTE = {

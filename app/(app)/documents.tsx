@@ -1,16 +1,11 @@
-import { Alert, ScrollView, View as RNView } from 'react-native';
+import { Alert, Linking, ScrollView, View as RNView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronRight, Download, Upload } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useRoleStore } from '@/stores/roleStore';
-import {
-  MOCK_DOCS_ALERTE,
-  MOCK_DOCS_COPRO,
-  getDocsLot,
-  type MockDocument,
-} from '@/fixtures/documents';
+import { useDocuments, getDownloadUrl } from '@/hooks/useDocuments';
+import type { MockDocument } from '@/fixtures/documents';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SectionLabel } from '@/components/ui/SectionLabel';
 import { ListRow, RowSeparator } from '@/components/ui/ListRow';
@@ -41,11 +36,15 @@ function DocumentListRow({ doc, onPress }: { doc: MockDocument; onPress: () => v
 export default function DocumentsScreen() {
   const router = useRouter();
   const colors = useThemeColors();
-  const role = useRoleStore((s) => s.role);
-  const docsLot = getDocsLot(role);
+  const { docsLot, docsCopro, alerte } = useDocuments();
 
-  const handleDocument = (name: string) => {
-    Alert.alert(name, 'Le téléchargement sera bientôt disponible.');
+  const handleDocument = async (doc: MockDocument) => {
+    const url = await getDownloadUrl(doc).catch(() => null);
+    if (url) {
+      Linking.openURL(url);
+      return;
+    }
+    Alert.alert(doc.title, 'Le téléchargement sera bientôt disponible.');
   };
 
   const handleUpload = () => {
@@ -66,32 +65,34 @@ export default function DocumentsScreen() {
 
             <YStack paddingHorizontal={24} gap={22}>
               {/* Bandeau alerte assurance */}
-              <XStack
-                backgroundColor={colors.warningBg}
-                borderRadius={20}
-                paddingVertical={16}
-                paddingHorizontal={20}
-                alignItems="center"
-                gap={12}
-                pressStyle={{ opacity: 0.8 }}
-                onPress={handleUpload}
-                role="button"
-                aria-label={MOCK_DOCS_ALERTE.text}
-              >
-                <PulsingDot color={colors.warning} size={8} pulse />
-                <Text
-                  flex={1}
-                  fontFamily="$body"
-                  fontSize={13}
-                  fontWeight="600"
-                  color={colors.warningText}
+              {alerte && (
+                <XStack
+                  backgroundColor={colors.warningBg}
+                  borderRadius={20}
+                  paddingVertical={16}
+                  paddingHorizontal={20}
+                  alignItems="center"
+                  gap={12}
+                  pressStyle={{ opacity: 0.8 }}
+                  onPress={handleUpload}
+                  role="button"
+                  aria-label={alerte.text}
                 >
-                  {MOCK_DOCS_ALERTE.text}
-                </Text>
-                <Text fontFamily="$heading" fontSize={13} fontWeight="700" color={colors.warning}>
-                  {MOCK_DOCS_ALERTE.action}
-                </Text>
-              </XStack>
+                  <PulsingDot color={colors.warning} size={8} pulse />
+                  <Text
+                    flex={1}
+                    fontFamily="$body"
+                    fontSize={13}
+                    fontWeight="600"
+                    color={colors.warningText}
+                  >
+                    {alerte.text}
+                  </Text>
+                  <Text fontFamily="$heading" fontSize={13} fontWeight="700" color={colors.warning}>
+                    {alerte.action}
+                  </Text>
+                </XStack>
+              )}
 
               {/* Mon logement / Mon lot (rôle-dépendant) */}
               <YStack gap={4}>
@@ -99,7 +100,7 @@ export default function DocumentsScreen() {
                 {docsLot.items.map((doc, index) => (
                   <YStack key={doc.id}>
                     {index > 0 && <RowSeparator />}
-                    <DocumentListRow doc={doc} onPress={() => handleDocument(doc.title)} />
+                    <DocumentListRow doc={doc} onPress={() => handleDocument(doc)} />
                   </YStack>
                 ))}
               </YStack>
@@ -107,10 +108,10 @@ export default function DocumentsScreen() {
               {/* Copropriété */}
               <YStack gap={4}>
                 <SectionLabel>Copropriété</SectionLabel>
-                {MOCK_DOCS_COPRO.map((doc, index) => (
+                {docsCopro.map((doc, index) => (
                   <YStack key={doc.id}>
                     {index > 0 && <RowSeparator />}
-                    <DocumentListRow doc={doc} onPress={() => handleDocument(doc.title)} />
+                    <DocumentListRow doc={doc} onPress={() => handleDocument(doc)} />
                   </YStack>
                 ))}
                 <RowSeparator />
