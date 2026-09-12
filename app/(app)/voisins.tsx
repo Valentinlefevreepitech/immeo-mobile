@@ -5,7 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Info } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useConsentsStore } from '@/stores/consentsStore';
-import { MOCK_VOISINS } from '@/fixtures/voisins';
+import { useMessages } from '@/hooks/useMessages';
+import { MOCK_VOISINS, type Voisin } from '@/fixtures/voisins';
 import { Avatar } from '@/components/ui/Avatar';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SectionLabel } from '@/components/ui/SectionLabel';
@@ -16,10 +17,21 @@ export default function VoisinsScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const annuaireVisible = useConsentsStore((s) => s.annuaireVisible);
+  const { getOrCreateConversation } = useMessages();
 
   const gardien = MOCK_VOISINS.filter((v) => v.role === 'gardien');
   const residents = MOCK_VOISINS.filter((v) => v.role !== 'gardien');
   const etages = Array.from(new Set(residents.map((v) => v.etage)));
+
+  const openConversation = (voisin: Voisin) => {
+    const id = getOrCreateConversation({
+      id: `resident-${voisin.id}`,
+      name: voisin.nom,
+      initials: voisin.initials,
+      subtitle: voisin.role === 'gardien' ? `Gardien · ${voisin.etage}` : voisin.etage,
+    });
+    router.push({ pathname: '/conversation', params: { id } });
+  };
 
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -67,7 +79,11 @@ export default function VoisinsScreen() {
                   {gardien.map((voisin, index) => (
                     <YStack key={voisin.id}>
                       {index > 0 && <RowSeparator />}
-                      <ListRow paddingVertical={12} aria-label={voisin.nom}>
+                      <ListRow
+                        paddingVertical={12}
+                        onPress={() => openConversation(voisin)}
+                        aria-label={`Contacter ${voisin.nom}`}
+                      >
                         <Avatar initials={voisin.initials} size={44} variant="soft" />
                         <YStack flex={1}>
                           <Text
@@ -101,7 +117,11 @@ export default function VoisinsScreen() {
                     .map((voisin, index) => (
                       <YStack key={voisin.id}>
                         {index > 0 && <RowSeparator />}
-                        <ListRow paddingVertical={12} aria-label={voisin.nom}>
+                        <ListRow
+                          paddingVertical={12}
+                          onPress={() => openConversation(voisin)}
+                          aria-label={`Contacter ${voisin.nom}`}
+                        >
                           <Avatar initials={voisin.initials} size={44} variant="soft" />
                           <YStack flex={1}>
                             <Text
@@ -135,8 +155,8 @@ export default function VoisinsScreen() {
                 paddingHorizontal={8}
                 lineHeight={18}
               >
-                Seuls les résidents ayant activé leur visibilité apparaissent ici. La messagerie
-                entre voisins arrive bientôt.
+                Seuls les résidents ayant activé leur visibilité apparaissent ici. Touchez un voisin
+                pour lui envoyer un message.
               </Text>
             </YStack>
           </ScrollView>

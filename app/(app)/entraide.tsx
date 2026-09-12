@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, ScrollView, View as RNView } from 'react-native';
+import { ScrollView, View as RNView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,9 +14,9 @@ import {
 } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useEntraide } from '@/hooks/useEntraide';
+import { useMessages } from '@/hooks/useMessages';
 import type { EntraideCategorie, EntraideOffer } from '@/fixtures/entraide';
 import { ENTRAIDE_CATEGORIES } from '@/fixtures/entraide';
-import { MOCK_CONVERSATIONS_V2 } from '@/fixtures/copro';
 import { Avatar } from '@/components/ui/Avatar';
 import { GradientCard } from '@/components/ui/GradientCard';
 import { ListRow, RowSeparator } from '@/components/ui/ListRow';
@@ -256,8 +256,11 @@ function OffresTab() {
 
 function MessagesTab() {
   const colors = useThemeColors();
-  const handleOpenConversation = (name: string) => {
-    Alert.alert(name, 'La conversation détaillée sera bientôt disponible.');
+  const router = useRouter();
+  const { conversations } = useMessages();
+
+  const openConversation = (id: string) => {
+    router.push({ pathname: '/conversation', params: { id } });
   };
 
   return (
@@ -267,7 +270,7 @@ function MessagesTab() {
         <XStack
           alignItems="center"
           gap={14}
-          onPress={() => handleOpenConversation('Cabinet Foncia')}
+          onPress={() => openConversation('foncia')}
           pressStyle={{ opacity: 0.8 }}
           role="button"
           aria-label="Écrire au gestionnaire"
@@ -294,15 +297,16 @@ function MessagesTab() {
         </XStack>
       </GradientCard>
 
-      {/* Conversations : syndic + gardien uniquement (pas de P2P en P0) */}
+      {/* Conversations : syndic, gardien et voisins (démarrées depuis Voisins ou Entraide) */}
       <YStack>
-        {MOCK_CONVERSATIONS_V2.map((conv, index) => {
+        {conversations.map((conv, index) => {
           const hasUnread = conv.unread > 0;
+          const lastMessage = conv.messages[conv.messages.length - 1];
           return (
             <YStack key={conv.id}>
               {index > 0 && <RowSeparator />}
               <ListRow
-                onPress={() => handleOpenConversation(conv.name)}
+                onPress={() => openConversation(conv.id)}
                 aria-label={`Conversation avec ${conv.name}`}
               >
                 <Avatar
@@ -320,14 +324,16 @@ function MessagesTab() {
                     >
                       {conv.name}
                     </Text>
-                    <Text
-                      fontFamily="$body"
-                      fontSize={12}
-                      fontWeight={hasUnread ? '500' : '400'}
-                      color={hasUnread ? colors.primary[500] : colors.text.disabled}
-                    >
-                      {conv.time}
-                    </Text>
+                    {lastMessage && (
+                      <Text
+                        fontFamily="$body"
+                        fontSize={12}
+                        fontWeight={hasUnread ? '500' : '400'}
+                        color={hasUnread ? colors.primary[500] : colors.text.disabled}
+                      >
+                        {lastMessage.time}
+                      </Text>
+                    )}
                   </XStack>
                   <Text
                     fontFamily="$body"
@@ -336,7 +342,7 @@ function MessagesTab() {
                     color={hasUnread ? colors.text.secondary : colors.text.muted}
                     numberOfLines={1}
                   >
-                    {conv.message}
+                    {lastMessage ? lastMessage.text : conv.subtitle}
                   </Text>
                 </YStack>
                 {hasUnread && (

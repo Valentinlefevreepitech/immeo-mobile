@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useEntraide } from '@/hooks/useEntraide';
+import { useMessages } from '@/hooks/useMessages';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SectionLabel } from '@/components/ui/SectionLabel';
 import { ListRow, RowSeparator } from '@/components/ui/ListRow';
@@ -12,11 +13,31 @@ import { PillButton } from '@/components/ui/PillButton';
 import { PulsingDot } from '@/components/ui/PulsingDot';
 import { PageTransition } from '@/components/ui/PageTransition';
 
+function slugify(nom: string): string {
+  return nom
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
 export default function EntraideGestionScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const { demandesRecues, mesDemandes, mesAnnonces, accepterDemande, refuserDemande } =
     useEntraide();
+  const { getOrCreateConversation } = useMessages();
+
+  const handleMessage = (demandeur: { nom: string; initials: string; etage: string }) => {
+    const id = getOrCreateConversation({
+      id: `resident-${slugify(demandeur.nom)}`,
+      name: demandeur.nom,
+      initials: demandeur.initials,
+      subtitle: demandeur.etage,
+    });
+    router.push({ pathname: '/conversation', params: { id } });
+  };
 
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -120,6 +141,9 @@ export default function EntraideGestionScreen() {
                               fontSize={13}
                               fontWeight="600"
                               color={colors.primary[500]}
+                              onPress={() => handleMessage(demande.demandeur)}
+                              role="link"
+                              aria-label={`Écrire à ${demande.demandeur.nom}`}
                             >
                               Message
                             </Text>

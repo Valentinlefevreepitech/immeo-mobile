@@ -6,7 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { colors } from '@/constants/colors';
-import { useCopro } from '@/hooks/useCopro';
+import { useMessages } from '@/hooks/useMessages';
 import { useNavTransitionStore } from '@/stores/navTransitionStore';
 import { PulsingDot } from '@/components/ui/PulsingDot';
 
@@ -20,7 +20,13 @@ const ACCUEIL_GROUP = ['index', 'notifications', 'incidents', 'incident-detail',
 // Routes secondaires rattachées à l'onglet Copro (tab bar visible, Copro actif)
 const COPRO_GROUP = ['copro', 'sondage-detail'];
 // Routes secondaires rattachées à l'onglet Entraide (tab bar visible, Entraide actif)
-const ENTRAIDE_GROUP = ['entraide', 'entraide-fiche', 'entraide-demande', 'entraide-gestion'];
+const ENTRAIDE_GROUP = [
+  'entraide',
+  'entraide-fiche',
+  'entraide-demande',
+  'entraide-gestion',
+  'conversation',
+];
 // Routes secondaires rattachées à l'onglet Profil (tab bar visible, Profil actif)
 const PROFIL_GROUP = ['profil', 'appart', 'voisins'];
 // Routes plein écran sans tab bar (flows de création)
@@ -170,8 +176,7 @@ function IsolatedTabButton({
 }
 
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
-  const { conversations } = useCopro();
-  const hasUnread = conversations.some((c) => c.unread);
+  const { hasUnread } = useMessages();
 
   const focusedRoute = state.routes[state.index]?.name;
   if (HIDDEN_ROUTES.includes(focusedRoute)) return null;
@@ -266,6 +271,7 @@ export default function AppLayout() {
       <Tabs.Screen name="profil" />
       <Tabs.Screen name="appart" options={{ href: null }} />
       <Tabs.Screen name="voisins" options={{ href: null }} />
+      <Tabs.Screen name="conversation" options={{ href: null }} />
       {/* Routes secondaires (hors onglets) */}
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="incidents" options={{ href: null }} />
