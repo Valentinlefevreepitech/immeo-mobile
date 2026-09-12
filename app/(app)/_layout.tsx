@@ -17,8 +17,10 @@ const ACTIVE_BORDER = colors.primary[200];
 
 // Routes secondaires rattachées à l'onglet Accueil (tab bar visible, Accueil actif)
 const ACCUEIL_GROUP = ['index', 'notifications', 'incidents', 'incident-detail', 'ag', 'documents'];
-// Routes plein écran sans tab bar (flow signalement)
-const HIDDEN_ROUTES = ['signaler'];
+// Routes secondaires rattachées à l'onglet Copro (tab bar visible, Copro actif)
+const COPRO_GROUP = ['copro', 'sondage-detail'];
+// Routes plein écran sans tab bar (flows de création)
+const HIDDEN_ROUTES = ['signaler', 'sondage-creer'];
 // Ordre de référence pour la direction du slide entre onglets (spec §3)
 const TAB_ORDER: Record<string, number> = { index: 0, copro: 1, profil: 2, appart: 3 };
 
@@ -278,7 +280,11 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const focusedRoute = state.routes[state.index]?.name;
   if (HIDDEN_ROUTES.includes(focusedRoute)) return null;
 
-  const activeTab = ACCUEIL_GROUP.includes(focusedRoute) ? 'index' : focusedRoute;
+  const activeTab = ACCUEIL_GROUP.includes(focusedRoute)
+    ? 'index'
+    : COPRO_GROUP.includes(focusedRoute)
+      ? 'copro'
+      : focusedRoute;
 
   const navigate = (name: string) => {
     const fromIndex = TAB_ORDER[activeTab] ?? 0;
@@ -355,6 +361,8 @@ export default function AppLayout() {
       <Tabs.Screen name="signaler" options={{ href: null }} />
       <Tabs.Screen name="ag" options={{ href: null }} />
       <Tabs.Screen name="documents" options={{ href: null }} />
+      <Tabs.Screen name="sondage-detail" options={{ href: null }} />
+      <Tabs.Screen name="sondage-creer" options={{ href: null }} />
     </Tabs>
   );
 }
