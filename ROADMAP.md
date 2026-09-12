@@ -27,6 +27,8 @@ Document de suivi du chantier de refonte (`PROMPT_CLAUDE_CODE.md`, 8 phases) et 
 
 **Bonus hors-phases** : un sélecteur de thème Clair/Sombre/Système avait été ajouté dans Profil > Apparence (`1d8b7ff`), puis **retiré sur demande utilisateur** (`b34f2b2`) — préférence pour suivre uniquement le thème système, sans bouton manuel. Un bug de fond blanc codé en dur (`#F7FCFB`) cassant la lisibilité en mode sombre a aussi été trouvé et corrigé sur les zones photo de `signaler.tsx` et `entraide-annonce.tsx` (`518d756`), ce correctif reste en place.
 
+**Restructuration navigation (12/09/2026, `d268627`)** : "Mon appart" a quitté la nav bar pour Profil > Compte, Copro s'est recentré sur Annonces/Sondages, et un nouvel onglet `entraide.tsx` fusionne Entraide + Messagerie (segmented Offres/Messages). Détails en 2.7 (fait) et 2.4 (résolu en effet de bord). Un bug de navigation a été découvert au passage — voir 2.6.
+
 **Phase 8** reste à faire et nécessitera un accès au projet Supabase réel.
 
 ---
@@ -55,8 +57,10 @@ Document de suivi du chantier de refonte (`PROMPT_CLAUDE_CODE.md`, 8 phases) et 
 - Probablement un nouveau bloc dans Copro (annonces) ou un écran dédié type "Infos pratiques" — à définir précisément avant implémentation (emplacement dans l'app, source de la donnée : mock ou paramétrable par le syndic).
 
 ### 2.4 Nav bar — simplifier les animations
-- **Clé (`app/(app)/_layout.tsx`, `AppartTabItem`)** : retirer l'animation (wiggle au repos + rotation -90° au tap), la rendre **statique**.
-- **Transition d'écran sur "Mon appart"** : retirer l'effet "porte" (`components/ui/DoorTransition.tsx`, `rotateY` + perspective) actuellement utilisé dans `app/(app)/appart.tsx`. À remplacer par une simple apparition sans animation (ou réutiliser `TabSlideTransition` comme les 3 autres onglets, à clarifier).
+✅ **Résolu en effet de bord de 2.7** (`d268627`) : "Mon appart" n'est plus un onglet de la nav bar (donc plus de clé animée `AppartTabItem` à rendre statique — le composant a été entièrement supprimé), et l'écran utilise maintenant `PageTransition` (fade standard) au lieu de l'effet "porte" (`DoorTransition`, supprimé).
+
+### 2.6 Bug — retour (back) vers le mauvais onglet depuis un écran poussé
+**Constaté en testant 2.7** (12/09/2026), sur `entraide-gestion.tsx` et `appart.tsx` : après plusieurs changements d'onglet (Accueil → Entraide → Copro → Profil, par ex.), pousser un écran secondaire (`router.push`) puis taper sur le bouton retour du `ScreenHeader` ramène vers **Accueil** (le tout premier onglet monté) plutôt que vers l'onglet réellement actif avant la navigation. Semble lié à la façon dont `expo-router` empile l'historique quand des `Tabs.Screen` sont mélangés avec du `push` — les changements d'onglet via la tab bar personnalisée (`navigation.navigate`) ne créent pas d'entrée d'historique, donc `router.back()` saute directement au premier écran monté. Pré-existant (reproductible aussi sur des écrans non touchés par 2.7), pas une régression de la restructuration nav. Pas encore corrigé — nécessite d'investiguer `router.replace` avec l'onglet d'origine explicite, ou une autre stratégie de retour.
 
 ### 2.5 Bug — double point orange en haut à droite (notifications)
 **Cause identifiée** (diagnostic fait, pas encore corrigé) : deux badges de l'app utilisent `position="absolute"` sur une `View` Tamagui **sans que le parent immédiat n'ait `position="relative"`** :
@@ -67,12 +71,15 @@ Sur web, sans `position="relative"` explicite sur le parent, ces deux badges "s'
 **Fix attendu** : ajouter `position="relative"` aux deux `View` parentes concernées dans `app/(app)/index.tsx`. Correction courte (2 lignes) une fois qu'on s'y attaque.
 
 ### 2.7 Refonte de la navigation (proposition utilisateur, 12/09/2026)
-Idée soumise à valider avant implémentation (impact large : nav bar, 3 écrans principaux) :
-- **Déplacer "Mon appart"** de la nav bar (actuellement 2ᵉ onglet, `app/(app)/appart.tsx`) **dans Profil**, plutôt qu'un onglet dédié.
-- **Copro** : créer une section clairement dédiée **Annonces + Sondages** (séparée du reste), plutôt que noyée dans le segmented pill actuel à 3 onglets.
-- **Fusionner Entraide et Messagerie** en un seul espace, au lieu des deux entrées actuelles du segmented pill Copro (Entraide) + bouton icône header (Messagerie) — cohérent avec 2.2 (repenser la messagerie P2P) puisque les conversations liées aux demandes d'entraide se rapprochent déjà d'une messagerie privée.
-- Impact : `app/(app)/_layout.tsx` (nav bar, `TAB_ORDER`, `ACCUEIL_GROUP`/`COPRO_GROUP`), `app/(app)/copro.tsx` (restructuration complète des onglets), `app/(app)/profil.tsx`, `app/(app)/appart.tsx`. À traiter comme une phase à part entière, avec un plan dédié avant de coder.
+✅ **Fait** (`d268627`) :
+- **"Mon appart"** a quitté la nav bar pour une entrée dans Profil > Compte (icône clé, `router.push('/appart')`), écran avec `ScreenHeader` + retour.
+- **Copro** recentré sur **Annonces + Sondages** uniquement (section dédiée aux communications officielles).
+- **Entraide et Messagerie fusionnés** dans un nouvel onglet racine `app/(app)/entraide.tsx` (segmented interne Offres/Messages), qui prend la place de "Mon appart" dans la pilule de la nav bar (icône `HandHelping`, badge non-lu).
+- Le bouton rond isolé Copro passe de l'icône message à `Megaphone`.
+- `components/ui/SegmentedTabs.tsx` extrait en composant partagé (était dupliqué).
+
+Note : la vraie refonte de la messagerie P2P (2.2) reste à faire — la fusion ici n'a déplacé que l'UI existante (syndic/gardien uniquement), pas ajouté le P2P.
 
 ---
 
-*Dernière mise à jour : 12/09/2026.*
+*Dernière mise à jour : 12/09/2026 (restructuration navigation).*
