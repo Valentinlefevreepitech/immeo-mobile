@@ -5,6 +5,28 @@
 
 import { useAuthStore } from '../stores/authStore';
 
+function mockFromChain(config: {
+  cabinet_members?: unknown;
+  coproprietaires?: unknown;
+  tenants?: unknown;
+}) {
+  return jest.fn((table: string) => {
+    const data =
+      table === 'cabinet_members'
+        ? (config.cabinet_members ?? null)
+        : table === 'coproprietaires'
+          ? (config.coproprietaires ?? null)
+          : table === 'tenants'
+            ? (config.tenants ?? null)
+            : null;
+    return {
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({ maybeSingle: jest.fn().mockResolvedValue({ data }) })),
+      })),
+    };
+  });
+}
+
 jest.mock('../lib/supabase', () => ({
   supabase: {
     auth: {
@@ -16,6 +38,12 @@ jest.mock('../lib/supabase', () => ({
         data: { subscription: { unsubscribe: jest.fn() } },
       })),
     },
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({ maybeSingle: jest.fn().mockResolvedValue({ data: null }) })),
+      })),
+    })),
+    rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
   },
 }));
 
@@ -35,6 +63,8 @@ function resetStore() {
 beforeEach(() => {
   resetStore();
   jest.clearAllMocks();
+  supabase.from.mockImplementation(mockFromChain({}));
+  supabase.rpc.mockResolvedValue({ data: null, error: null });
 });
 
 describe('authStore', () => {
@@ -58,18 +88,17 @@ describe('authStore', () => {
       expect(useAuthStore.getState().isLoggedIn).toBe(false);
     });
 
-    it('connecte un utilisateur avec un role autorise', async () => {
+    it('connecte un utilisateur et resout son role via coproprietaires', async () => {
+      supabase.from.mockImplementation(
+        mockFromChain({ coproprietaires: { id: 'copro-1', copropriete_id: 'building-1' } }),
+      );
       mockAuth.getSession.mockResolvedValueOnce({
         data: {
           session: {
             user: {
               id: '123',
               email: 'test@test.com',
-              user_metadata: {
-                first_name: 'Jean',
-                last_name: 'Dupont',
-                role: 'resident',
-              },
+              user_metadata: { first_name: 'Jean', last_name: 'Dupont' },
             },
           },
         },
@@ -82,26 +111,24 @@ describe('authStore', () => {
       expect(state.isInitialized).toBe(true);
       expect(state.user?.fullName).toBe('Jean Dupont');
       expect(state.user?.initials).toBe('JD');
-      expect(state.user?.email).toBe('test@test.com');
+      expect(state.user?.role).toBe('coproprietaire');
+      expect(state.user?.coproprieteId).toBe('building-1');
     });
 
-    it('deconnecte un utilisateur avec un role non autorise', async () => {
+    it('connecte un utilisateur avec role null si aucun rattachement trouve', async () => {
       mockAuth.getSession.mockResolvedValueOnce({
         data: {
           session: {
-            user: {
-              id: '123',
-              email: 'admin@test.com',
-              user_metadata: { role: 'admin' },
-            },
+            user: { id: '123', email: 'nomatch@test.com', user_metadata: {} },
           },
         },
       });
 
       await useAuthStore.getState().initialize();
 
-      expect(mockAuth.signOut).toHaveBeenCalled();
-      expect(useAuthStore.getState().isLoggedIn).toBe(false);
+      const state = useAuthStore.getState();
+      expect(state.isLoggedIn).toBe(true);
+      expect(state.user?.role).toBeNull();
     });
 
     it('enregistre le listener onAuthStateChange', async () => {
@@ -114,17 +141,16 @@ describe('authStore', () => {
   });
 
   describe('login', () => {
-    it('connecte avec des identifiants valides', async () => {
+    it('connecte avec des identifiants valides et resout le role gestionnaire', async () => {
+      supabase.from.mockImplementation(
+        mockFromChain({ cabinet_members: { cabinet_id: 'cabinet-1' } }),
+      );
       mockAuth.signInWithPassword.mockResolvedValueOnce({
         data: {
           user: {
             id: '123',
             email: 'test@test.com',
-            user_metadata: {
-              first_name: 'Marie',
-              last_name: 'Martin',
-              role: 'resident',
-            },
+            user_metadata: { first_name: 'Marie', last_name: 'Martin' },
           },
         },
         error: null,
@@ -135,6 +161,8 @@ describe('authStore', () => {
       expect(result.success).toBe(true);
       expect(useAuthStore.getState().isLoggedIn).toBe(true);
       expect(useAuthStore.getState().user?.fullName).toBe('Marie Martin');
+      expect(useAuthStore.getState().user?.role).toBe('gestionnaire');
+      expect(useAuthStore.getState().user?.cabinetId).toBe('cabinet-1');
     });
 
     it('retourne une erreur si identifiants incorrects', async () => {
@@ -150,25 +178,6 @@ describe('authStore', () => {
       expect(useAuthStore.getState().isLoggedIn).toBe(false);
     });
 
-    it('refuse un role non autorise apres login', async () => {
-      mockAuth.signInWithPassword.mockResolvedValueOnce({
-        data: {
-          user: {
-            id: '123',
-            email: 'admin@test.com',
-            user_metadata: { role: 'admin' },
-          },
-        },
-        error: null,
-      });
-
-      const result = await useAuthStore.getState().login('admin@test.com', 'password');
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('reservee aux residents');
-      expect(mockAuth.signOut).toHaveBeenCalled();
-    });
-
     it('gere isLoading pendant le login', async () => {
       let resolveLogin: (value: unknown) => void;
       const loginPromise = new Promise((resolve) => {
@@ -180,13 +189,7 @@ describe('authStore', () => {
       expect(useAuthStore.getState().isLoading).toBe(true);
 
       resolveLogin!({
-        data: {
-          user: {
-            id: '1',
-            email: 'test@test.com',
-            user_metadata: { role: 'resident' },
-          },
-        },
+        data: { user: { id: '1', email: 'test@test.com', user_metadata: {} } },
         error: null,
       });
 
@@ -196,16 +199,13 @@ describe('authStore', () => {
   });
 
   describe('register', () => {
-    it('inscrit un nouvel utilisateur', async () => {
+    it('inscrit un nouvel utilisateur et tente le rattachement automatique par email', async () => {
       mockAuth.signUp.mockResolvedValueOnce({
         data: {
           user: {
             id: '456',
             email: 'new@test.com',
-            user_metadata: {
-              first_name: 'Pierre',
-              last_name: 'Durand',
-            },
+            user_metadata: { first_name: 'Pierre', last_name: 'Durand' },
           },
           session: { access_token: 'token' },
         },
@@ -219,6 +219,9 @@ describe('authStore', () => {
       expect(result.success).toBe(true);
       expect(useAuthStore.getState().isLoggedIn).toBe(true);
       expect(useAuthStore.getState().user?.fullName).toBe('Pierre Durand');
+      expect(supabase.rpc).toHaveBeenCalledWith('claim_resident_by_email', {
+        p_email: 'new@test.com',
+      });
     });
 
     it('retourne un message si confirmation email requise', async () => {
@@ -274,7 +277,7 @@ describe('authStore', () => {
           email: 'test@test.com',
           fullName: 'Test',
           initials: 'T',
-          role: 'resident',
+          role: 'locataire',
           firstName: 'Test',
           lastName: '',
           coproprieteId: null,

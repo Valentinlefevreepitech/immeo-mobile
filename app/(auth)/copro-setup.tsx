@@ -3,13 +3,12 @@ import { Animated, KeyboardAvoidingView, Platform, ScrollView, TextInput } from 
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Building2, Check, ChevronLeft, ChevronRight, Plus } from 'lucide-react-native';
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Plus } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore } from '@/stores/authStore';
-import { MOCK_BUILDING } from '@/fixtures/home';
 import { PillButton } from '@/components/ui/PillButton';
 
-type Step = 'choice' | 'join' | 'create' | 'confirmation';
+type Step = 'intro' | 'create' | 'confirmation';
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
@@ -20,8 +19,13 @@ function generateCode(): string {
   ).join('');
 }
 
-/** Étape 1 : choisir de rejoindre une copro existante ou d'en créer une. */
-function StepChoice({ onJoin, onCreate }: { onJoin: () => void; onCreate: () => void }) {
+/**
+ * Étape 1 : aucune correspondance trouvée automatiquement (par email) avec
+ * une ligne tenants/coproprietaires existante. On explique la situation et
+ * on propose la seule option disponible pour l'instant : créer une nouvelle
+ * copropriété (mock local, pas encore branchée au vrai backend).
+ */
+function StepIntro({ onCreate }: { onCreate: () => void }) {
   const colors = useThemeColors();
 
   return (
@@ -37,40 +41,23 @@ function StepChoice({ onJoin, onCreate }: { onJoin: () => void; onCreate: () => 
           Votre copropriété
         </Text>
         <Text fontFamily="$body" fontSize={15} fontWeight="400" color={colors.text.muted}>
-          Pour accéder à Imméo, rejoignez votre immeuble ou configurez-le.
+          Aucune correspondance trouvée pour votre email. Si votre immeuble est déjà géré, contactez
+          votre gestionnaire pour qu'il vous rattache. Sinon, créez votre copropriété ci-dessous.
         </Text>
       </YStack>
 
       <XStack
-        alignItems="center"
-        gap={14}
-        backgroundColor={colors.surface.card}
-        borderRadius={22}
-        padding={20}
-        pressStyle={{ scale: 0.98 }}
-        onPress={onJoin}
-        role="button"
-        aria-label="Rejoindre une copropriété existante"
+        alignItems="flex-start"
+        gap={12}
+        backgroundColor={colors.warningBg}
+        borderRadius={18}
+        padding={16}
       >
-        <View
-          width={48}
-          height={48}
-          borderRadius={24}
-          backgroundColor={colors.primary[50]}
-          alignItems="center"
-          justifyContent="center"
-        >
-          <Building2 size={22} color={colors.primary[500]} strokeWidth={1.8} />
-        </View>
-        <YStack flex={1}>
-          <Text fontFamily="$heading" fontSize={15} fontWeight="700" color={colors.text.primary}>
-            Rejoindre une copropriété
-          </Text>
-          <Text fontFamily="$body" fontSize={13} fontWeight="400" color={colors.text.muted}>
-            J'ai un code fourni par mon syndic ou un voisin
-          </Text>
-        </YStack>
-        <ChevronRight size={16} color={colors.text.disabled} strokeWidth={2} />
+        <AlertTriangle size={18} color={colors.warning} strokeWidth={2} />
+        <Text fontFamily="$body" fontSize={13} fontWeight="400" color={colors.warning} flex={1}>
+          Fonctionnalité en cours de finalisation : la création reste locale pour l'instant, elle ne
+          sera pas encore synchronisée avec votre gestionnaire.
+        </Text>
       </XStack>
 
       <XStack
@@ -140,55 +127,7 @@ function StepHeader({ title, onBack }: { title: string; onBack: () => void }) {
   );
 }
 
-/** Étape 2a : rejoindre via un code à 6 caractères. */
-function StepJoin({ onBack, onJoin }: { onBack: () => void; onJoin: (code: string) => void }) {
-  const colors = useThemeColors();
-  const [code, setCode] = useState('');
-  const canSubmit = code.trim().length === 6;
-
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1 }}
-    >
-      <YStack flex={1}>
-        <StepHeader title="Rejoindre une copropriété" onBack={onBack} />
-        <YStack paddingHorizontal={24} paddingVertical={28} gap={12}>
-          <Text fontFamily="$body" fontSize={14} fontWeight="400" color={colors.text.muted}>
-            Entrez le code à 6 caractères partagé par votre syndic ou un voisin.
-          </Text>
-          <TextInput
-            placeholder="A4B7K9"
-            placeholderTextColor={colors.text.disabled}
-            value={code}
-            onChangeText={(t) => setCode(t.toUpperCase().slice(0, 6))}
-            autoCapitalize="characters"
-            autoCorrect={false}
-            maxLength={6}
-            aria-label="Code de la copropriété"
-            style={{
-              backgroundColor: colors.surface.card,
-              borderRadius: 999,
-              paddingVertical: 18,
-              paddingHorizontal: 24,
-              fontFamily: 'InterBold',
-              fontSize: 22,
-              letterSpacing: 6,
-              textAlign: 'center',
-              color: colors.text.primary,
-            }}
-          />
-        </YStack>
-        <YStack flex={1} />
-        <YStack paddingHorizontal={24} paddingBottom={40}>
-          <PillButton label="Rejoindre" disabled={!canSubmit} onPress={() => onJoin(code)} />
-        </YStack>
-      </YStack>
-    </KeyboardAvoidingView>
-  );
-}
-
-/** Étape 2b : créer une nouvelle copropriété (nom + adresse). */
+/** Étape 2 : créer une nouvelle copropriété (nom + adresse). */
 function StepCreate({
   onBack,
   onCreate,
@@ -367,17 +306,8 @@ export default function CoproSetupScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const setCopropriete = useAuthStore((s) => s.setCopropriete);
-  const [step, setStep] = useState<Step>('choice');
+  const [step, setStep] = useState<Step>('intro');
   const [result, setResult] = useState<{ id: string; name: string; code?: string } | null>(null);
-
-  const handleJoin = (code: string) => {
-    const matches = code.toUpperCase() === MOCK_BUILDING.code;
-    setResult({
-      id: `copro-${code.toLowerCase()}`,
-      name: matches ? MOCK_BUILDING.name : 'Votre nouvelle copropriété',
-    });
-    setStep('confirmation');
-  };
 
   const handleCreate = (name: string, _address: string) => {
     const code = generateCode();
@@ -393,12 +323,9 @@ export default function CoproSetupScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
-        {step === 'choice' && (
-          <StepChoice onJoin={() => setStep('join')} onCreate={() => setStep('create')} />
-        )}
-        {step === 'join' && <StepJoin onBack={() => setStep('choice')} onJoin={handleJoin} />}
+        {step === 'intro' && <StepIntro onCreate={() => setStep('create')} />}
         {step === 'create' && (
-          <StepCreate onBack={() => setStep('choice')} onCreate={handleCreate} />
+          <StepCreate onBack={() => setStep('intro')} onCreate={handleCreate} />
         )}
         {step === 'confirmation' && result && (
           <StepConfirmation

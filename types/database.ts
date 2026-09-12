@@ -4,32 +4,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1';
-  };
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
+    PostgrestVersion: '14.5';
   };
   public: {
     Tables: {
@@ -1339,6 +1314,7 @@ export type Database = {
       coproprietaires: {
         Row: {
           adresse_correspondance: string | null;
+          auth_user_id: string | null;
           copropriete_id: string;
           created_at: string;
           created_by: string;
@@ -1365,6 +1341,7 @@ export type Database = {
         };
         Insert: {
           adresse_correspondance?: string | null;
+          auth_user_id?: string | null;
           copropriete_id: string;
           created_at?: string;
           created_by?: string;
@@ -1391,6 +1368,7 @@ export type Database = {
         };
         Update: {
           adresse_correspondance?: string | null;
+          auth_user_id?: string | null;
           copropriete_id?: string;
           created_at?: string;
           created_by?: string;
@@ -5098,6 +5076,7 @@ export type Database = {
       tenants: {
         Row: {
           apartment_id: string;
+          auth_user_id: string | null;
           bic: string | null;
           bic_encrypted: string | null;
           clause_revision_loyer: boolean | null;
@@ -5136,6 +5115,7 @@ export type Database = {
         };
         Insert: {
           apartment_id: string;
+          auth_user_id?: string | null;
           bic?: string | null;
           bic_encrypted?: string | null;
           clause_revision_loyer?: boolean | null;
@@ -5174,6 +5154,7 @@ export type Database = {
         };
         Update: {
           apartment_id?: string;
+          auth_user_id?: string | null;
           bic?: string | null;
           bic_encrypted?: string | null;
           clause_revision_loyer?: boolean | null;
@@ -6312,6 +6293,7 @@ export type Database = {
           pourcentage: number;
         }[];
       };
+      claim_resident_by_email: { Args: { p_email: string }; Returns: Json };
       cleanup_expired_documents: {
         Args: never;
         Returns: {
@@ -6416,6 +6398,8 @@ export type Database = {
         }[];
       };
       get_user_cabinet_id: { Args: never; Returns: string };
+      get_user_coproprietaire_id: { Args: never; Returns: string };
+      get_user_tenant_id: { Args: never; Returns: string };
       has_role: { Args: { required_role: string }; Returns: boolean };
       is_admin: { Args: never; Returns: boolean };
       is_cabinet_admin: { Args: never; Returns: boolean };
@@ -6674,9 +6658,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       activity_type: ['AG', 'Incident', 'Paiement', 'Message'],
@@ -6760,7 +6741,7 @@ export const Constants = {
   },
 } as const;
 
-// ── Convenience type aliases ──
+// -- Convenience type aliases --
 export type IncidentStatus = Database['public']['Enums']['incident_status'];
 export type IncidentType = Database['public']['Enums']['incident_type'];
 export type IncidentCategory = IncidentType;

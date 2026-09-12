@@ -21,13 +21,16 @@ export function useAuthGuard() {
     const segmentList: readonly string[] = segments;
     const inAuthGroup = segmentList[0] === '(auth)';
     const inCoproSetup = inAuthGroup && segmentList[1] === 'copro-setup';
-    const needsCopro = isLoggedIn && !!user && !user.coproprieteId;
+    // Pas encore rattache a un cabinet/coproprietaire/tenant reel : on
+    // envoie vers l'ecran de rattachement plutot que sur l'app avec des
+    // donnees vides.
+    const needsLinking = isLoggedIn && !!user && user.role === null;
 
     if (!isLoggedIn && !inAuthGroup) {
       router.replace('/(auth)/login');
-    } else if (isLoggedIn && needsCopro && !inCoproSetup) {
+    } else if (isLoggedIn && needsLinking && !inCoproSetup) {
       router.replace('/(auth)/copro-setup');
-    } else if (isLoggedIn && !needsCopro && inAuthGroup) {
+    } else if (isLoggedIn && !needsLinking && inAuthGroup) {
       router.replace('/(app)');
     }
   }, [isLoggedIn, isInitialized, segments, user]);

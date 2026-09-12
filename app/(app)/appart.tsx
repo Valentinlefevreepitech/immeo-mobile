@@ -15,7 +15,7 @@ export default function AppartScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const role = useRoleStore((s) => s.role);
-  const finance = MOCK_FINANCES[role];
+  const finance = MOCK_FINANCES[role === 'gestionnaire' ? 'locataire' : role];
 
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>

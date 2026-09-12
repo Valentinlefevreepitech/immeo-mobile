@@ -3,16 +3,21 @@ import type { User } from '@supabase/supabase-js';
 import { Sentry } from '@/lib/sentry';
 import { supabase } from '@/lib/supabase';
 
+export type ResolvedRole = 'gestionnaire' | 'coproprietaire' | 'locataire' | null;
+
 interface UserProfile {
   id: string;
   email: string;
   fullName: string;
   initials: string;
-  role: string;
+  role: ResolvedRole;
   firstName: string;
   lastName: string;
   coproprieteId: string | null;
   apartmentId: string | null;
+  cabinetId?: string | null;
+  coproprietaireId?: string | null;
+  tenantId?: string | null;
 }
 
 interface AuthState {
@@ -32,8 +37,6 @@ interface AuthState {
   setCopropriete: (coproprieteId: string) => void;
 }
 
-const ALLOWED_ROLES = ['resident', 'tenant'];
-
 // Session fictive quand aucun backend n'est configuré (dev uniquement) :
 // permet de naviguer dans l'app alimentée par les fixtures.
 const DEMO_USER: UserProfile = {
@@ -41,14 +44,14 @@ const DEMO_USER: UserProfile = {
   email: 'valentin.lefevre@epitech.digital',
   fullName: 'Valentin Lefevre',
   initials: 'VL',
-  role: 'tenant',
+  role: 'locataire',
   firstName: 'Valentin',
   lastName: 'Lefevre',
   coproprieteId: 'demo-copro',
   apartmentId: null,
 };
 
-function buildProfileFromAuth(authUser: User): UserProfile {
+function buildBaseProfile(authUser: User): Omit<UserProfile, 'role'> {
   const meta = authUser.user_metadata || {};
   const firstName = meta.first_name || '';
   const lastName = meta.last_name || '';
@@ -66,12 +69,66 @@ function buildProfileFromAuth(authUser: User): UserProfile {
     email: authUser.email || '',
     fullName,
     initials,
-    role: meta.role || 'resident',
     firstName,
     lastName,
-    coproprieteId: meta.copropriete_id || null,
-    apartmentId: meta.apartment_id || null,
+    coproprieteId: null,
+    apartmentId: null,
   };
+}
+
+/**
+ * Determine le role reel du resident en interrogeant les tables de
+ * rattachement (cabinet_members > coproprietaires > tenants), plutot que de
+ * se fier a user_metadata.role (jamais assigne de facon fiable cote serveur).
+ */
+async function resolveResidentRole(authUser: User): Promise<UserProfile> {
+  const base = buildBaseProfile(authUser);
+  if (!supabase) return { ...base, role: null };
+
+  const { data: cabinetMember } = await supabase
+    .from('cabinet_members')
+    .select('cabinet_id')
+    .eq('user_id', authUser.id)
+    .maybeSingle();
+
+  if (cabinetMember) {
+    return { ...base, role: 'gestionnaire', cabinetId: cabinetMember.cabinet_id };
+  }
+
+  const { data: coproprietaire } = await supabase
+    .from('coproprietaires')
+    .select('id, copropriete_id')
+    .eq('auth_user_id', authUser.id)
+    .maybeSingle();
+
+  if (coproprietaire) {
+    return {
+      ...base,
+      role: 'coproprietaire',
+      coproprietaireId: coproprietaire.id,
+      coproprieteId: coproprietaire.copropriete_id,
+    };
+  }
+
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('id, apartment_id, apartments(copropriete_id)')
+    .eq('auth_user_id', authUser.id)
+    .maybeSingle();
+
+  if (tenant) {
+    return {
+      ...base,
+      role: 'locataire',
+      tenantId: tenant.id,
+      apartmentId: tenant.apartment_id,
+      coproprieteId:
+        (tenant as { apartments?: { copropriete_id: string } | null }).apartments?.copropriete_id ??
+        null,
+    };
+  }
+
+  return { ...base, role: null };
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -95,10 +152,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (event === 'SIGNED_OUT') {
         set({ user: null, isLoggedIn: false, isLoading: false });
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        const role = session.user.user_metadata?.role;
-        if (role && ALLOWED_ROLES.includes(role)) {
-          set({ user: buildProfileFromAuth(session.user) });
-        }
+        resolveResidentRole(session.user).then((user) => set({ user }));
       }
     });
 
@@ -108,17 +162,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       } = await supabase.auth.getSession();
 
       if (session?.user) {
-        const role = session.user.user_metadata?.role;
-        if (role && ALLOWED_ROLES.includes(role)) {
-          set({
-            user: buildProfileFromAuth(session.user),
-            isLoggedIn: true,
-            isInitialized: true,
-          });
-          return;
-        }
-        // Role non autorise → deconnexion
-        await supabase.auth.signOut();
+        const user = await resolveResidentRole(session.user);
+        set({ user, isLoggedIn: true, isInitialized: true });
+        return;
       }
     } catch (error) {
       Sentry.captureException(error);
@@ -144,23 +190,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       return { success: false, error: 'Email ou mot de passe incorrect' };
     }
 
-    const role = data.user.user_metadata?.role;
-
-    if (!role || !ALLOWED_ROLES.includes(role)) {
-      await supabase.auth.signOut();
-      set({ isLoading: false });
-      return {
-        success: false,
-        error:
-          'Cette application est reservee aux residents. Utilisez le portail web pour la gestion.',
-      };
-    }
-
-    set({
-      user: buildProfileFromAuth(data.user),
-      isLoggedIn: true,
-      isLoading: false,
-    });
+    const user = await resolveResidentRole(data.user);
+    set({ user, isLoggedIn: true, isLoading: false });
     return { success: true };
   },
 
@@ -205,11 +236,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
 
     if (data.user && data.session) {
-      set({
-        user: buildProfileFromAuth(data.user),
-        isLoggedIn: true,
-        isLoading: false,
-      });
+      // Tente de rattacher automatiquement le compte a une ligne
+      // tenants/coproprietaires existante partageant le meme email.
+      await supabase.rpc('claim_resident_by_email', { p_email: email });
+      const user = await resolveResidentRole(data.user);
+      set({ user, isLoggedIn: true, isLoading: false });
     }
 
     return { success: true };
@@ -225,9 +256,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   setLoading: (loading) => set({ isLoading: loading }),
 
   setCopropriete: (coproprieteId) => {
-    // Pas d'appel reseau ici : aucun projet Supabase connecte dans cet
-    // environnement. Le vrai rattachement (RPC/Edge Function) arrivera
-    // avec la Phase 8.
-    set((state) => (state.user ? { user: { ...state.user, coproprieteId } } : state));
+    // Flow "creer une nouvelle copropriete" encore mock/local (pas de
+    // cabinet de gestion associe pour l'instant, voir plan Phase 8 Step 1).
+    // On pose role: 'coproprietaire' pour que useAuthGuard laisse passer
+    // vers l'app une fois la creation "confirmee".
+    set((state) =>
+      state.user ? { user: { ...state.user, coproprieteId, role: 'coproprietaire' } } : state,
+    );
   },
 }));

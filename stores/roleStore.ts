@@ -1,24 +1,23 @@
 import { create } from 'zustand';
-import { useAuthStore } from './authStore';
+import { useAuthStore, type ResolvedRole } from './authStore';
 
-export type ResidentRole = 'locataire' | 'coproprietaire';
+export type ResidentRole = 'locataire' | 'coproprietaire' | 'gestionnaire';
 
 export const ROLE_LABELS: Record<ResidentRole, string> = {
   locataire: 'Locataire',
   coproprietaire: 'Copropriétaire',
+  gestionnaire: 'Gestionnaire',
 };
 
 /**
- * Le role brut vient de authStore (session Supabase / user_metadata.role,
- * ou DEMO_USER en dev sans backend). C'est la source de verite unique ;
- * ce store derive uniquement le libelle "resident" utilise par l'UI.
+ * Le role brut vient de authStore, resolu depuis les vraies tables Supabase
+ * (cabinet_members / coproprietaires / tenants) ou DEMO_USER en dev sans
+ * backend. C'est la source de verite unique ; ce store derive uniquement le
+ * libelle "resident" utilise par l'UI. `null` (pas encore rattache) retombe
+ * sur "locataire" par defaut le temps que l'ecran de rattachement s'affiche.
  */
-export function mapAuthRoleToResident(authRole: string | undefined): ResidentRole {
-  return authRole === 'resident' ? 'coproprietaire' : 'locataire';
-}
-
-function residentToAuthRole(role: ResidentRole): string {
-  return role === 'coproprietaire' ? 'resident' : 'tenant';
+export function mapAuthRoleToResident(authRole: ResolvedRole | undefined): ResidentRole {
+  return authRole ?? 'locataire';
 }
 
 interface RoleState {
@@ -31,14 +30,17 @@ export const useRoleStore = create<RoleState>((set, get) => ({
   role: mapAuthRoleToResident(useAuthStore.getState().user?.role),
   setRole: (role) => {
     set({ role });
-    // Repercute sur authStore pour que le role reste coherent partout
-    // (utile pour le toggle de demo dans Profil, tant que le backend n'est pas branche).
-    useAuthStore.setState((s) =>
-      s.user ? { user: { ...s.user, role: residentToAuthRole(role) } } : s,
-    );
+    // Repercute sur authStore uniquement en mode demo (pas de backend
+    // connecte) : sinon le role est resolu depuis les vraies tables et ne
+    // doit pas etre modifiable manuellement.
+    if (!useAuthStore.getState().user || useAuthStore.getState().user?.id === 'demo') {
+      useAuthStore.setState((s) => (s.user ? { user: { ...s.user, role } } : s));
+    }
   },
   toggleRole: () => {
-    get().setRole(get().role === 'locataire' ? 'coproprietaire' : 'locataire');
+    const order: ResidentRole[] = ['locataire', 'coproprietaire', 'gestionnaire'];
+    const next = order[(order.indexOf(get().role) + 1) % order.length];
+    get().setRole(next);
   },
 }));
 

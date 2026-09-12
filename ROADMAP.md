@@ -15,7 +15,7 @@ Document de suivi du chantier de refonte (`PROMPT_CLAUDE_CODE.md`, 8 phases) et 
 | 5 | Sondages entre voisins (onglet Copro, détail, création 2 étapes) | ✅ Fait | `abba7a2` |
 | 6 | Entraide (prêt d'objets/services entre voisins) | ✅ Fait | `6ec3119`, `eab1426`, `45b70b1` |
 | 7 | AG (vote en ligne copropriétaire), Documents, Notifications à enrichir | ✅ Fait | `6ec3119` |
-| 8 | Branchement backend Supabase (auth, tables sondages/entraide, storage, push) | ⬜ À faire | — |
+| 8 | Branchement backend Supabase (auth, tables sondages/entraide, storage, push) | 🟡 En cours (Step 1 fait) | — |
 
 **Constat récurrent (Phases 2-4)** : la plupart des écrans existaient déjà quasi conformes à la spec avant même le début de cette session (commit `c8c405a`, antérieur) — le travail réel a surtout consisté à brancher le mode sombre (`useThemeColors()`), qui existait en infrastructure depuis la Phase 1 mais n'était consommé nulle part.
 
@@ -29,7 +29,17 @@ Document de suivi du chantier de refonte (`PROMPT_CLAUDE_CODE.md`, 8 phases) et 
 
 **Restructuration navigation (12/09/2026, `d268627`)** : "Mon appart" a quitté la nav bar pour Profil > Compte, Copro s'est recentré sur Annonces/Sondages, et un nouvel onglet `entraide.tsx` fusionne Entraide + Messagerie (segmented Offres/Messages). Détails en 2.7 (fait) et 2.4 (résolu en effet de bord). Un bug de navigation systémique (retour vers le mauvais écran) a été découvert au passage puis corrigé — voir 2.6 (fait).
 
-**Phase 8** reste à faire et nécessitera un accès au projet Supabase réel.
+**Phase 8 — Step 1 fait (12/09/2026)** : fondations auth réelles. En explorant, découverte que le projet Supabase de l'app n'est pas vide : c'est le backend actif "Imméo-Gestion" (`tqdvfktpbaxeawvvorjv`), déjà en prod pour une app sœur destinée aux gestionnaires/cabinets de syndic, et dont `types/database.ts` contenait déjà les types générés. L'utilisateur a clarifié une contrainte clé : Imméo Mobile doit être **standalone**, sans dépendre d'une future suite Imméo-Gestion, avec accès self-service pour locataire, propriétaire et gestionnaire directement sur mobile.
+
+Le schéma existant est entièrement pensé pour le staff (RLS par `cabinet_id`) : `tenants`/`coproprietaires` n'avaient aucune colonne reliant une ligne à un compte `auth.users`. Migration additive appliquée (`phase8_step1_resident_auth_linkage`, aucune colonne/policy existante modifiée) :
+- Colonnes `auth_user_id` (nullable, index unique partiel) sur `tenants` et `coproprietaires`.
+- Fonctions `get_user_tenant_id()` / `get_user_coproprietaire_id()` (mêmes patterns que `get_user_cabinet_id()` déjà existant pour le rôle gestionnaire).
+- Policies RLS additives self-service (`auth_user_id = auth.uid()`) sur les deux tables.
+- RPC `claim_resident_by_email()` : rattache automatiquement un compte à une ligne `coproprietaires`/`tenants` existante partageant le même email, appelée à l'inscription.
+
+Côté mobile : `stores/authStore.ts` résout maintenant le rôle réel via `cabinet_members` → `coproprietaires` → `tenants` (au lieu de `user_metadata.role`, jamais fiable) ; `stores/roleStore.ts` étendu à 3 rôles (locataire/coproprietaire/gestionnaire) ; `hooks/useAuthGuard.ts` redirige vers `copro-setup` si `role === null` (pas de correspondance trouvée) ; `app/(auth)/copro-setup.tsx` simplifié — la carte "rejoindre avec un code" a été retirée (le `code_acces` de la table `coproprietes` est un digicode physique, pas un code d'invitation app, et l'auto-claim par email couvre déjà ce cas), ne reste que "créer une nouvelle copropriété" (encore mock, cf. hors-scope ci-dessous). Décision confirmée avec l'utilisateur : le rôle "propriétaire" mappe sur `coproprietaires` (tantièmes/AG), pas sur `owners` (bailleurs sous mandat locatif). `types/database.ts` régénéré pour inclure les nouveaux objets DB. `.env` local créé (git-ignoré) avec les vraies clés du projet.
+
+**Hors scope pour ce Step 1** (steps suivants) : créer une copropriété vraiment autonome sans cabinet de gestion (le schéma est structurellement multi-tenant par cabinet, demande une vraie réflexion de schéma) ; câblage des écrans existants (finances, incidents, documents, AG) sur les vraies tables ; nouvelles tables `sondages`/`entraide` (n'existent pas côté DB) ; refonte de la messagerie P2P sur une vraie table.
 
 ---
 
