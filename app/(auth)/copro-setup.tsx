@@ -709,7 +709,7 @@ function StepCreate({
                 onChangeText={setPostalCode}
                 keyboardType="number-pad"
                 aria-label="Code postal"
-                style={[inputStyle, { flex: 1 }]}
+                style={{ ...inputStyle, flex: 1, minWidth: 0 }}
               />
               <TextInput
                 placeholder="Ville"
@@ -718,7 +718,7 @@ function StepCreate({
                 onChangeText={setCity}
                 autoCapitalize="words"
                 aria-label="Ville"
-                style={[inputStyle, { flex: 1 }]}
+                style={{ ...inputStyle, flex: 1, minWidth: 0 }}
               />
             </XStack>
 
