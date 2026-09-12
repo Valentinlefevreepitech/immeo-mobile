@@ -1,5 +1,5 @@
 import { Text } from 'tamagui';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 /** Label de section uppercase (prototype v2) : 13px/600, muted, +0.8 letter-spacing. */
 export function SectionLabel({
@@ -9,6 +9,7 @@ export function SectionLabel({
   children: string;
   marginBottom?: number;
 }) {
+  const colors = useThemeColors();
   return (
     <Text
       fontFamily="$body"

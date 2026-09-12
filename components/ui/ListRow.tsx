@@ -1,5 +1,5 @@
 import { XStack, View } from 'tamagui';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface ListRowProps {
   children: React.ReactNode;
@@ -38,5 +38,6 @@ export function ListRow({
 
 /** Séparateur 1px entre rows (pas de cartes par item — listes plates façon Revolut). */
 export function RowSeparator() {
+  const colors = useThemeColors();
   return <View height={1} backgroundColor={colors.surface.separator} />;
 }

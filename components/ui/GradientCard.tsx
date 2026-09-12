@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ViewStyle } from 'react-native';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface GradientCardProps {
   children: React.ReactNode;
@@ -11,6 +11,7 @@ interface GradientCardProps {
 
 /** Carte hero gradient teal pastel (135deg #E6F5F2 → #C2E8E1) du prototype v2. */
 export function GradientCard({ children, radius = 24, padding = 20, style }: GradientCardProps) {
+  const colors = useThemeColors();
   return (
     <LinearGradient
       colors={colors.gradient.hero}

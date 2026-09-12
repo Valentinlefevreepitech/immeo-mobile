@@ -3,7 +3,7 @@ import { Alert, ScrollView, View as RNView } from 'react-native';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronRight, LogOut, ShieldCheck, User } from 'lucide-react-native';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useProfile } from '@/hooks/useProfile';
 import { useRoleStore, ROLE_LABELS } from '@/stores/roleStore';
 import { MOCK_APARTMENT } from '@/fixtures/apartment';
@@ -49,6 +49,7 @@ function AccountRow({
   label: string;
   onPress: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <ListRow onPress={onPress} aria-label={label}>
       <View
@@ -70,6 +71,7 @@ function AccountRow({
 }
 
 export default function ProfilScreen() {
+  const colors = useThemeColors();
   const { profile, handleLogout } = useProfile();
   const role = useRoleStore((s) => s.role);
   const toggleRole = useRoleStore((s) => s.toggleRole);

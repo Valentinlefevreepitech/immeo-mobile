@@ -1,6 +1,6 @@
 import { Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface AvatarProps {
   initials: string;
@@ -10,6 +10,7 @@ interface AvatarProps {
 }
 
 export function Avatar({ initials, size = 40, variant = 'gradient' }: AvatarProps) {
+  const colors = useThemeColors();
   const fontSize = Math.round(size * 0.34);
 
   if (variant === 'soft') {

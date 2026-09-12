@@ -1,5 +1,5 @@
 import { Text, View } from 'tamagui';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface PillButtonProps {
   label: string;
@@ -16,6 +16,7 @@ export function PillButton({
   variant = 'primary',
   disabled = false,
 }: PillButtonProps) {
+  const colors = useThemeColors();
   const bg =
     variant === 'primary'
       ? colors.primary[500]

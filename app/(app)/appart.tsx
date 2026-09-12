@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, Clock, FileText } from 'lucide-react-native';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRoleStore } from '@/stores/roleStore';
 import { MOCK_FINANCES, MOCK_LOGEMENT } from '@/fixtures/apartment';
 import { ListRow, RowSeparator } from '@/components/ui/ListRow';
@@ -12,6 +12,7 @@ import { DoorTransition } from '@/components/ui/DoorTransition';
 
 export default function AppartScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const role = useRoleStore((s) => s.role);
   const finance = MOCK_FINANCES[role];
 

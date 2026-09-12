@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable } from 'react-native';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface ToggleProps {
   value: boolean;
@@ -10,6 +10,7 @@ interface ToggleProps {
 
 /** Toggle 44×26 du prototype v2 : track teal/gris, thumb blanc 20px animé. */
 export function Toggle({ value, onValueChange, 'aria-label': ariaLabel }: ToggleProps) {
+  const colors = useThemeColors();
   const anim = useRef(new Animated.Value(value ? 1 : 0)).current;
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { XStack, YStack, Text, View } from 'tamagui';
 import { ChevronLeft, X } from 'lucide-react-native';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface ScreenHeaderProps {
   title: string;
@@ -19,6 +19,7 @@ export function ScreenHeader({
   icon = 'back',
   trailing,
 }: ScreenHeaderProps) {
+  const colors = useThemeColors();
   const Icon = icon === 'close' ? X : ChevronLeft;
   const compact = !!subtitle;
 

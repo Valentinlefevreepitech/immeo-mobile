@@ -1,5 +1,5 @@
 import { Text, View } from 'tamagui';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface PrimaryButtonProps {
   label: string;
@@ -14,6 +14,7 @@ export function PrimaryButton({
   isLoading = false,
   onPress,
 }: PrimaryButtonProps) {
+  const colors = useThemeColors();
   return (
     <View
       backgroundColor={isLoading ? colors.primary[300] : colors.primary[500]}

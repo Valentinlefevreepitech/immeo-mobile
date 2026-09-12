@@ -14,7 +14,7 @@ import {
   FileText,
   Wrench,
 } from 'lucide-react-native';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore } from '@/stores/authStore';
 import { MOCK_BUILDING, MOCK_UPCOMING, MOCK_HOME_ALERTS } from '@/fixtures/home';
 import { Avatar } from '@/components/ui/Avatar';
@@ -36,6 +36,7 @@ function QuickAction({
   badge?: boolean;
   onPress: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <YStack
       alignItems="center"
@@ -79,6 +80,7 @@ function QuickAction({
 
 export default function AccueilScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const user = useAuthStore((s) => s.user);
   const [copied, setCopied] = useState(false);
 

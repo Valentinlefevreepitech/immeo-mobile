@@ -3,7 +3,7 @@ import { Alert, ScrollView, View as RNView } from 'react-native';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronRight, MessageCircle } from 'lucide-react-native';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { MOCK_PANNEAU, MOCK_FIL_ACTUALITE, MOCK_CONVERSATIONS_V2 } from '@/fixtures/copro';
 import { Avatar } from '@/components/ui/Avatar';
 import { GradientCard } from '@/components/ui/GradientCard';
@@ -21,6 +21,7 @@ function SegmentedTabs({
   active: CoproTab;
   onSwitch: (tab: CoproTab) => void;
 }) {
+  const colors = useThemeColors();
   const tabs: { key: CoproTab; label: string }[] = [
     { key: 'annonces', label: 'Annonces' },
     { key: 'messages', label: 'Messagerie' },
@@ -67,6 +68,7 @@ function SegmentedTabs({
 }
 
 function AnnoncesTab() {
+  const colors = useThemeColors();
   return (
     <YStack gap={24}>
       {/* Panneau d'affichage */}
@@ -151,6 +153,7 @@ function AnnoncesTab() {
 }
 
 function MessagesTab() {
+  const colors = useThemeColors();
   const handleOpenConversation = (name: string) => {
     Alert.alert(name, 'La conversation détaillée sera bientôt disponible.');
   };
@@ -259,6 +262,7 @@ function MessagesTab() {
 }
 
 export default function CoproScreen() {
+  const colors = useThemeColors();
   const [tab, setTab] = useState<CoproTab>('annonces');
 
   return (

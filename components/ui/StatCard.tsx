@@ -1,5 +1,5 @@
 import { Text, View } from 'tamagui';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface StatCardProps {
   value: string;
@@ -7,7 +7,8 @@ interface StatCardProps {
   valueColor?: string;
 }
 
-export function StatCard({ value, label, valueColor = colors.primary[500] }: StatCardProps) {
+export function StatCard({ value, label, valueColor }: StatCardProps) {
+  const colors = useThemeColors();
   return (
     <View
       flex={1}
@@ -18,7 +19,12 @@ export function StatCard({ value, label, valueColor = colors.primary[500] }: Sta
       alignItems="center"
       accessibilityLabel={`${label} : ${value}`}
     >
-      <Text fontFamily="$heading" fontSize={22} fontWeight="700" color={valueColor}>
+      <Text
+        fontFamily="$heading"
+        fontSize={22}
+        fontWeight="700"
+        color={valueColor ?? colors.primary[500]}
+      >
         {value}
       </Text>
       <Text fontFamily="$body" fontSize={12} fontWeight="500" color={colors.gray[500]}>
