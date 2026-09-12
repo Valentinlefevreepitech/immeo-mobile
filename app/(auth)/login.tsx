@@ -4,7 +4,17 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Mail, Lock, User, Eye, EyeOff, Building2, UserPlus } from 'lucide-react-native';
+import {
+  Mail,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  Building2,
+  UserPlus,
+  Sparkles,
+  KeyRound,
+} from 'lucide-react-native';
 import { colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/authStore';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
@@ -251,41 +261,6 @@ function DividerText({ text }: { text: string }) {
       </Text>
       <View flex={1} height={1} backgroundColor={colors.gray[200]} />
     </XStack>
-  );
-}
-
-/* ── Social button ── */
-function SocialButton({
-  icon,
-  label,
-  onPress,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <View
-      flex={1}
-      flexDirection="row"
-      alignItems="center"
-      justifyContent="center"
-      gap={8}
-      paddingVertical={14}
-      borderRadius={14}
-      borderWidth={1}
-      borderColor={colors.gray[200]}
-      backgroundColor={colors.white}
-      pressStyle={{ opacity: 0.7, backgroundColor: colors.gray[50] }}
-      onPress={onPress}
-      role="button"
-      aria-label={`Se connecter avec ${label}`}
-    >
-      {icon}
-      <Text fontFamily="$body" fontSize={14} fontWeight="500" color={colors.gray[700]}>
-        {label}
-      </Text>
-    </View>
   );
 }
 
@@ -554,6 +529,25 @@ function RegisterForm() {
         </YStack>
       )}
 
+      <XStack
+        alignItems="flex-start"
+        gap={10}
+        backgroundColor={colors.primary[50]}
+        borderRadius={16}
+        padding={14}
+      >
+        <Sparkles size={16} color={colors.primary[500]} strokeWidth={2} style={{ marginTop: 1 }} />
+        <Text
+          fontFamily="$body"
+          fontSize={12}
+          fontWeight="500"
+          color={colors.primary[700]}
+          flex={1}
+        >
+          Votre logement est retrouvé automatiquement. Aucun code à saisir.
+        </Text>
+      </XStack>
+
       <Text
         fontFamily="$body"
         fontSize={12}
@@ -675,62 +669,26 @@ export default function AuthScreen() {
             <YStack gap={20} marginTop={28}>
               {activeTab === 'login' ? <LoginForm /> : <RegisterForm />}
 
-              <DividerText text="Ou continuer avec" />
+              <DividerText text="ou" />
 
-              <XStack gap={12}>
-                <SocialButton
-                  icon={
-                    <Text
-                      fontFamily="$heading"
-                      fontSize={18}
-                      fontWeight="700"
-                      color={colors.gray[700]}
-                    >
-                      G
-                    </Text>
-                  }
-                  label="Google"
-                  onPress={() =>
-                    Alert.alert('Google', 'La connexion Google sera bientot disponible.')
-                  }
-                />
-                <SocialButton
-                  icon={
-                    <Text
-                      fontFamily="$heading"
-                      fontSize={18}
-                      fontWeight="700"
-                      color={colors.gray[700]}
-                    ></Text>
-                  }
-                  label="Apple"
-                  onPress={() =>
-                    Alert.alert('Apple', 'La connexion Apple sera bientot disponible.')
-                  }
-                />
-              </XStack>
-
-              {/* Onboarding sur invitation */}
-              <Text
-                fontFamily="$body"
-                fontSize={13}
-                fontWeight="400"
-                color={colors.gray[500]}
-                textAlign="center"
+              <XStack
+                alignItems="center"
+                justifyContent="center"
+                gap={8}
+                borderWidth={1}
+                borderColor={colors.gray[200]}
+                borderRadius={999}
+                paddingVertical={14}
+                pressStyle={{ opacity: 0.7, backgroundColor: colors.gray[50] }}
+                onPress={() => router.push('/(auth)/invitation')}
+                role="button"
+                aria-label="J'ai un code d'invitation"
               >
-                Vous avez reçu une invitation de votre syndic ?{' '}
-                <Text
-                  fontSize={13}
-                  color={colors.primary[500]}
-                  fontWeight="600"
-                  pressStyle={{ opacity: 0.6 }}
-                  onPress={() => router.push('/(auth)/invitation')}
-                  role="link"
-                  aria-label="Activer mon compte sur invitation"
-                >
-                  Activer mon compte
+                <KeyRound size={16} color={colors.gray[600]} strokeWidth={2} />
+                <Text fontFamily="$body" fontSize={14} fontWeight="500" color={colors.gray[700]}>
+                  J'ai un code d'invitation
                 </Text>
-              </Text>
+              </XStack>
             </YStack>
           </ScrollView>
         </View>

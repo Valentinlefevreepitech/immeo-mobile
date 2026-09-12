@@ -25,6 +25,11 @@ interface AuthState {
   isLoading: boolean;
   isLoggedIn: boolean;
   isInitialized: boolean;
+  /** L'utilisateur a choisi de continuer sans copropriété (copro-setup, écran 4) ;
+   * reinitialise a chaque nouvelle session (non persiste), il pourra rejoindre
+   * plus tard depuis son profil. */
+  onboardingSkipped: boolean;
+  skipOnboarding: () => void;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (
     fullName: string,
@@ -35,6 +40,23 @@ interface AuthState {
   initialize: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   setCopropriete: (coproprieteId: string) => void;
+  searchMatch: () => Promise<ResidentMatch | null>;
+  confirmMatch: () => Promise<boolean>;
+  joinByCode: (code: string) => Promise<{ id: string; nom: string } | null>;
+  listApartments: (
+    coproprieteId: string,
+  ) => Promise<{ id: string; numero: string; etage: number | null }[]>;
+  joinAsCoproprietaire: (coproprieteId: string) => Promise<void>;
+  joinAsLocataire: (apartmentId: string) => Promise<void>;
+}
+
+export interface ResidentMatch {
+  role: 'coproprietaire' | 'locataire';
+  building_name: string;
+  building_address: string | null;
+  lot: string | null;
+  etage?: number | null;
+  syndic_name: string | null;
 }
 
 // Session fictive quand aucun backend n'est configuré (dev uniquement) :
@@ -131,11 +153,13 @@ async function resolveResidentRole(authUser: User): Promise<UserProfile> {
   return { ...base, role: null };
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: false,
   isLoggedIn: false,
   isInitialized: false,
+  onboardingSkipped: false,
+  skipOnboarding: () => set({ onboardingSkipped: true }),
 
   initialize: async () => {
     if (!supabase) {
@@ -236,9 +260,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
 
     if (data.user && data.session) {
-      // Tente de rattacher automatiquement le compte a une ligne
-      // tenants/coproprietaires existante partageant le meme email.
-      await supabase.rpc('claim_resident_by_email', { p_email: email });
+      // Le rattachement (recherche puis confirmation) se fait maintenant
+      // explicitement depuis l'ecran copro-setup, pas silencieusement ici.
       const user = await resolveResidentRole(data.user);
       set({ user, isLoggedIn: true, isLoading: false });
     }
@@ -250,10 +273,97 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (supabase) {
       await supabase.auth.signOut();
     }
-    set({ user: null, isLoggedIn: false, isLoading: false });
+    set({ user: null, isLoggedIn: false, isLoading: false, onboardingSkipped: false });
   },
 
   setLoading: (loading) => set({ isLoading: loading }),
+
+  searchMatch: async () => {
+    if (!supabase) return null;
+    const { user } = get();
+    if (!user) return null;
+    const { data, error } = await supabase.rpc('find_resident_match_by_email', {
+      p_email: user.email,
+    });
+    if (error) return null;
+    return (data as ResidentMatch | null) ?? null;
+  },
+
+  confirmMatch: async () => {
+    if (!supabase) return false;
+    const { user } = get();
+    if (!user) return false;
+    const { error } = await supabase.rpc('claim_resident_by_email', { p_email: user.email });
+    if (error) return false;
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user) return false;
+
+    const resolved = await resolveResidentRole(session.user);
+    set({ user: resolved });
+    return resolved.role !== null;
+  },
+
+  joinByCode: async (code) => {
+    if (!supabase) return null;
+    const { data, error } = await supabase
+      .from('coproprietes')
+      .select('id, nom')
+      .eq('invite_code', code.trim().toUpperCase())
+      .maybeSingle();
+    if (error || !data) return null;
+    return data;
+  },
+
+  listApartments: async (coproprieteId) => {
+    if (!supabase) return [];
+    const { data, error } = await supabase.rpc('list_copropriete_apartments', {
+      p_copropriete_id: coproprieteId,
+    });
+    if (error || !data) return [];
+    return data;
+  },
+
+  joinAsCoproprietaire: async (coproprieteId) => {
+    if (!supabase) return;
+    const { user } = get();
+    if (!user) return;
+    const { error } = await supabase.from('coproprietaires').insert({
+      copropriete_id: coproprieteId,
+      auth_user_id: user.id,
+      nom: user.lastName || user.fullName,
+      prenom: user.firstName || null,
+      email: user.email,
+    });
+    if (error) return;
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session?.user) set({ user: await resolveResidentRole(session.user) });
+  },
+
+  joinAsLocataire: async (apartmentId) => {
+    if (!supabase) return;
+    const { user } = get();
+    if (!user) return;
+    const { error } = await supabase.from('tenants').insert({
+      apartment_id: apartmentId,
+      auth_user_id: user.id,
+      first_name: user.firstName || user.fullName,
+      last_name: user.lastName || '',
+      email: user.email,
+      date_entree: new Date().toISOString().slice(0, 10),
+    });
+    if (error) return;
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session?.user) set({ user: await resolveResidentRole(session.user) });
+  },
 
   setCopropriete: (coproprieteId) => {
     // Flow "creer une nouvelle copropriete" encore mock/local (pas de

@@ -1458,6 +1458,7 @@ export type Database = {
           id: string;
           image_url: string | null;
           incidents_count: number | null;
+          invite_code: string | null;
           next_ag_date: string | null;
           next_rent_due: string | null;
           nom: string;
@@ -1507,6 +1508,7 @@ export type Database = {
           id?: string;
           image_url?: string | null;
           incidents_count?: number | null;
+          invite_code?: string | null;
           next_ag_date?: string | null;
           next_rent_due?: string | null;
           nom: string;
@@ -1556,6 +1558,7 @@ export type Database = {
           id?: string;
           image_url?: string | null;
           incidents_count?: number | null;
+          invite_code?: string | null;
           next_ag_date?: string | null;
           next_rent_due?: string | null;
           nom?: string;
@@ -6337,6 +6340,7 @@ export type Database = {
       };
       decrypt_sensitive_data: { Args: { p_data: string }; Returns: string };
       encrypt_sensitive_data: { Args: { p_data: string }; Returns: string };
+      find_resident_match_by_email: { Args: { p_email: string }; Returns: Json };
       get_current_user_profile: {
         Args: never;
         Returns: {
@@ -6399,10 +6403,19 @@ export type Database = {
       };
       get_user_cabinet_id: { Args: never; Returns: string };
       get_user_coproprietaire_id: { Args: never; Returns: string };
+      get_user_copropriete_id: { Args: never; Returns: string };
       get_user_tenant_id: { Args: never; Returns: string };
       has_role: { Args: { required_role: string }; Returns: boolean };
       is_admin: { Args: never; Returns: boolean };
       is_cabinet_admin: { Args: never; Returns: boolean };
+      list_copropriete_apartments: {
+        Args: { p_copropriete_id: string };
+        Returns: {
+          etage: number;
+          id: string;
+          numero: string;
+        }[];
+      };
       log_document_access: {
         Args: {
           p_access_type: string;

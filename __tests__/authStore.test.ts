@@ -199,7 +199,7 @@ describe('authStore', () => {
   });
 
   describe('register', () => {
-    it('inscrit un nouvel utilisateur et tente le rattachement automatique par email', async () => {
+    it('inscrit un nouvel utilisateur sans rattachement automatique (role null, geree par copro-setup)', async () => {
       mockAuth.signUp.mockResolvedValueOnce({
         data: {
           user: {
@@ -219,9 +219,8 @@ describe('authStore', () => {
       expect(result.success).toBe(true);
       expect(useAuthStore.getState().isLoggedIn).toBe(true);
       expect(useAuthStore.getState().user?.fullName).toBe('Pierre Durand');
-      expect(supabase.rpc).toHaveBeenCalledWith('claim_resident_by_email', {
-        p_email: 'new@test.com',
-      });
+      expect(useAuthStore.getState().user?.role).toBeNull();
+      expect(supabase.rpc).not.toHaveBeenCalledWith('claim_resident_by_email', expect.anything());
     });
 
     it('retourne un message si confirmation email requise', async () => {
@@ -266,6 +265,107 @@ describe('authStore', () => {
 
       const signUpCall = mockAuth.signUp.mock.calls[0][0];
       expect(signUpCall.options.data).not.toHaveProperty('role');
+    });
+  });
+
+  describe('searchMatch / confirmMatch (recherche puis confirmation explicite)', () => {
+    beforeEach(() => {
+      useAuthStore.setState({
+        user: {
+          id: '123',
+          email: 'test@test.com',
+          fullName: 'Test User',
+          initials: 'TU',
+          role: null,
+          firstName: 'Test',
+          lastName: 'User',
+          coproprieteId: null,
+          apartmentId: null,
+        },
+        isLoggedIn: true,
+      });
+    });
+
+    it('searchMatch renvoie le resultat du RPC find_resident_match_by_email', async () => {
+      supabase.rpc.mockResolvedValueOnce({
+        data: { role: 'coproprietaire', building_name: 'Les Lilas', lot: 'A23' },
+        error: null,
+      });
+
+      const match = await useAuthStore.getState().searchMatch();
+
+      expect(supabase.rpc).toHaveBeenCalledWith('find_resident_match_by_email', {
+        p_email: 'test@test.com',
+      });
+      expect(match?.building_name).toBe('Les Lilas');
+    });
+
+    it('searchMatch renvoie null si aucune correspondance', async () => {
+      supabase.rpc.mockResolvedValueOnce({ data: null, error: null });
+
+      const match = await useAuthStore.getState().searchMatch();
+
+      expect(match).toBeNull();
+    });
+
+    it('confirmMatch appelle claim_resident_by_email puis resout le role', async () => {
+      supabase.from.mockImplementation(
+        mockFromChain({ coproprietaires: { id: 'copro-1', copropriete_id: 'building-1' } }),
+      );
+      supabase.rpc.mockResolvedValueOnce({ data: null, error: null });
+      mockAuth.getSession.mockResolvedValueOnce({
+        data: { session: { user: { id: '123', email: 'test@test.com', user_metadata: {} } } },
+      });
+
+      const ok = await useAuthStore.getState().confirmMatch();
+
+      expect(supabase.rpc).toHaveBeenCalledWith('claim_resident_by_email', {
+        p_email: 'test@test.com',
+      });
+      expect(ok).toBe(true);
+      expect(useAuthStore.getState().user?.role).toBe('coproprietaire');
+    });
+  });
+
+  describe('joinByCode', () => {
+    it('renvoie la copropriete trouvee pour un code valide', async () => {
+      supabase.from.mockImplementation(() => ({
+        select: jest.fn(() => ({
+          eq: jest.fn(() => ({
+            maybeSingle: jest
+              .fn()
+              .mockResolvedValue({ data: { id: 'copro-1', nom: 'Les Lilas' }, error: null }),
+          })),
+        })),
+      }));
+
+      const result = await useAuthStore.getState().joinByCode('a4b7k9');
+
+      expect(result).toEqual({ id: 'copro-1', nom: 'Les Lilas' });
+    });
+
+    it('renvoie null pour un code invalide', async () => {
+      supabase.from.mockImplementation(() => ({
+        select: jest.fn(() => ({
+          eq: jest.fn(() => ({
+            maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+          })),
+        })),
+      }));
+
+      const result = await useAuthStore.getState().joinByCode('ZZZZZZ');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('skipOnboarding', () => {
+    it('passe onboardingSkipped a true', () => {
+      expect(useAuthStore.getState().onboardingSkipped).toBe(false);
+
+      useAuthStore.getState().skipOnboarding();
+
+      expect(useAuthStore.getState().onboardingSkipped).toBe(true);
     });
   });
 

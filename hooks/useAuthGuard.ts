@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
  * selon l'etat de connexion.
  */
 export function useAuthGuard() {
-  const { user, isLoggedIn, isInitialized, initialize } = useAuthStore();
+  const { user, isLoggedIn, isInitialized, onboardingSkipped, initialize } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
 
@@ -23,8 +23,9 @@ export function useAuthGuard() {
     const inCoproSetup = inAuthGroup && segmentList[1] === 'copro-setup';
     // Pas encore rattache a un cabinet/coproprietaire/tenant reel : on
     // envoie vers l'ecran de rattachement plutot que sur l'app avec des
-    // donnees vides.
-    const needsLinking = isLoggedIn && !!user && user.role === null;
+    // donnees vides, sauf si l'utilisateur a explicitement choisi de
+    // continuer sans copropriete (copro-setup, "continuer sans copropriete").
+    const needsLinking = isLoggedIn && !!user && user.role === null && !onboardingSkipped;
 
     if (!isLoggedIn && !inAuthGroup) {
       router.replace('/(auth)/login');
@@ -33,5 +34,5 @@ export function useAuthGuard() {
     } else if (isLoggedIn && !needsLinking && inAuthGroup) {
       router.replace('/(app)');
     }
-  }, [isLoggedIn, isInitialized, segments, user]);
+  }, [isLoggedIn, isInitialized, segments, user, onboardingSkipped]);
 }
