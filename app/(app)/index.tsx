@@ -16,7 +16,8 @@ import {
 } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore } from '@/stores/authStore';
-import { MOCK_BUILDING, MOCK_UPCOMING, MOCK_HOME_ALERTS } from '@/fixtures/home';
+import { useHome } from '@/hooks/useHome';
+import { MOCK_HOME_ALERTS } from '@/fixtures/home';
 import { Avatar } from '@/components/ui/Avatar';
 import { GradientCard } from '@/components/ui/GradientCard';
 import { ListRow, RowSeparator } from '@/components/ui/ListRow';
@@ -83,16 +84,17 @@ export default function AccueilScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const user = useAuthStore((s) => s.user);
+  const { building, upcoming } = useHome();
   const [copied, setCopied] = useState(false);
 
   const firstName = user?.firstName || 'Valentin';
   const initials = user?.initials || 'VL';
 
   const handleCopyCode = useCallback(async () => {
-    await Clipboard.setStringAsync(MOCK_BUILDING.code);
+    await Clipboard.setStringAsync(building.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, []);
+  }, [building.code]);
 
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -122,7 +124,7 @@ export default function AccueilScreen() {
                   letterSpacing={-0.3}
                   color={colors.text.primary}
                 >
-                  {MOCK_BUILDING.name}
+                  {building.name}
                 </Text>
               </YStack>
               <View
@@ -167,7 +169,7 @@ export default function AccueilScreen() {
                     lineHeight={42}
                     color={colors.primary[900]}
                   >
-                    {MOCK_BUILDING.code}
+                    {building.code}
                   </Text>
                   <XStack>
                     <XStack
@@ -239,7 +241,7 @@ export default function AccueilScreen() {
                 >
                   À venir
                 </Text>
-                {MOCK_UPCOMING.map((item, index) => (
+                {upcoming.map((item, index) => (
                   <YStack key={item.id}>
                     {index > 0 && <RowSeparator />}
                     <ListRow

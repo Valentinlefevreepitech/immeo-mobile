@@ -1,12 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/authStore';
-import {
-  fetchCopropriete,
-  fetchCaretaker,
-  fetchImportantDates,
-  fetchActiveAlerts,
-} from '@/lib/api/home';
-import { MOCK_BUILDING, MOCK_GARDIEN, MOCK_DATES, MOCK_ALERTS } from '@/fixtures/home';
+import { fetchCopropriete, fetchCaretaker, fetchImportantDates } from '@/lib/api/home';
+import { MOCK_BUILDING, MOCK_GARDIEN, MOCK_UPCOMING } from '@/fixtures/home';
+
+function formatMonthShort(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '');
+}
+
+function formatDay(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit' });
+}
 
 export function useHome() {
   const coproprieteId = useAuthStore((s) => s.user?.coproprieteId);
@@ -29,16 +32,9 @@ export function useHome() {
     enabled: !!coproprieteId,
   });
 
-  const alertsQuery = useQuery({
-    queryKey: ['monitoring_alerts', 'active'],
-    queryFn: fetchActiveAlerts,
-    enabled: !!coproprieteId,
-  });
-
   const copropriete = buildingQuery.data;
   const caretaker = gardienQuery.data;
   const importantDates = datesQuery.data;
-  const monitoringAlerts = alertsQuery.data;
 
   // Map Supabase data to the shape screens expect, falling back to fixtures
   const building = copropriete
@@ -53,39 +49,22 @@ export function useHome() {
       }
     : MOCK_GARDIEN;
 
-  const dates =
+  const upcoming =
     importantDates && importantDates.length > 0
-      ? importantDates.map((d) => ({
+      ? importantDates.map((d, index) => ({
           id: String(d.id),
-          label: d.description,
-          date: d.date,
-          detail: d.description,
-          type: d.type as 'calendar' | 'works',
+          month: formatMonthShort(d.date),
+          day: formatDay(d.date),
+          title: d.description ?? 'Échéance',
+          subtitle: d.type === 'works' ? 'Travaux' : 'Date importante',
+          accent: index === 0,
+          route: undefined as string | undefined,
         }))
-      : MOCK_DATES;
+      : MOCK_UPCOMING;
 
-  const alerts =
-    monitoringAlerts && monitoringAlerts.length > 0
-      ? monitoringAlerts.map((a) => ({
-          id: a.id,
-          title: a.name,
-          subtitle: a.description ?? '',
-          detail: a.description ?? '',
-          type: (a.severity === 'critical'
-            ? 'warning'
-            : a.severity === 'info'
-              ? 'info'
-              : 'primary') as 'warning' | 'info' | 'primary',
-        }))
-      : MOCK_ALERTS;
+  const isLoading = buildingQuery.isLoading || gardienQuery.isLoading || datesQuery.isLoading;
 
-  const isLoading =
-    buildingQuery.isLoading ||
-    gardienQuery.isLoading ||
-    datesQuery.isLoading ||
-    alertsQuery.isLoading;
+  const error = buildingQuery.error || gardienQuery.error || datesQuery.error;
 
-  const error = buildingQuery.error || gardienQuery.error || datesQuery.error || alertsQuery.error;
-
-  return { building, gardien, dates, alerts, isLoading, error };
+  return { building, gardien, upcoming, isLoading, error };
 }

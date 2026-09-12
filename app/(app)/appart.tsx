@@ -4,8 +4,7 @@ import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, Clock, FileText } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useRoleStore } from '@/stores/roleStore';
-import { MOCK_FINANCES, MOCK_LOGEMENT } from '@/fixtures/apartment';
+import { useApartment } from '@/hooks/useApartment';
 import { ListRow, RowSeparator } from '@/components/ui/ListRow';
 import { PulsingDot } from '@/components/ui/PulsingDot';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -14,8 +13,7 @@ import { PageTransition } from '@/components/ui/PageTransition';
 export default function AppartScreen() {
   const router = useRouter();
   const colors = useThemeColors();
-  const role = useRoleStore((s) => s.role);
-  const finance = MOCK_FINANCES[role === 'gestionnaire' ? 'locataire' : role];
+  const { finance, logement } = useApartment();
 
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -165,7 +163,7 @@ export default function AppartScreen() {
                   Le logement
                 </Text>
                 <XStack flexWrap="wrap" gap={12}>
-                  {MOCK_LOGEMENT.map((tile) => (
+                  {logement.map((tile) => (
                     <YStack
                       key={tile.id}
                       width="47%"

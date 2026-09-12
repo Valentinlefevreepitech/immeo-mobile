@@ -6,6 +6,7 @@ type ParkingSpace = Database['public']['Tables']['parking_spaces']['Row'];
 type RentPayment = Database['public']['Tables']['rent_payments']['Row'];
 type ApartmentDocument = Database['public']['Tables']['apartment_documents']['Row'];
 type Tenant = Database['public']['Tables']['tenants']['Row'];
+type AppelDeFonds = Database['public']['Tables']['appels_de_fonds']['Row'];
 
 export async function fetchApartment(apartmentId: string): Promise<Apartment> {
   if (!supabase) throw new Error('Supabase non disponible');
@@ -59,6 +60,19 @@ export async function fetchTenants(apartmentId: string): Promise<Tenant[]> {
     .eq('apartment_id', apartmentId)
     .is('date_sortie', null)
     .order('is_main_tenant', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchAppelsDeFonds(coproprietaireId: string): Promise<AppelDeFonds[]> {
+  if (!supabase) throw new Error('Supabase non disponible');
+  const { data, error } = await supabase
+    .from('appels_de_fonds')
+    .select('*')
+    .eq('coproprietaire_id', coproprietaireId)
+    .order('annee', { ascending: false })
+    .order('trimestre', { ascending: false })
+    .limit(12);
   if (error) throw error;
   return data;
 }
