@@ -79,7 +79,7 @@ function StepOne({
           borderWidth={2}
           borderStyle="dashed"
           borderColor={colors.primary[100]}
-          backgroundColor="#F7FCFB"
+          backgroundColor={colors.primary[50]}
           borderRadius={24}
           padding={26}
           alignItems="center"
@@ -276,7 +276,7 @@ function StepTwo({
         <YStack gap={12}>
           <SectionLabel marginBottom={0}>Récapitulatif</SectionLabel>
           <YStack
-            backgroundColor="#F7FCFB"
+            backgroundColor={colors.primary[50]}
             borderWidth={1}
             borderColor={colors.primary[100]}
             borderRadius={20}

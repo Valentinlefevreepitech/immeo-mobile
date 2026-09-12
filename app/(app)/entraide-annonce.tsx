@@ -120,7 +120,7 @@ export default function EntraideAnnonceScreen() {
             borderWidth={2}
             borderStyle="dashed"
             borderColor={colors.primary[100]}
-            backgroundColor="#F7FCFB"
+            backgroundColor={colors.primary[50]}
             borderRadius={24}
             padding={24}
             alignItems="center"
