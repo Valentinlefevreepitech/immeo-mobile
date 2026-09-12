@@ -4,11 +4,8 @@ import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronRight, Plus } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import {
-  MOCK_MES_SIGNALEMENTS,
-  MOCK_INCIDENTS_IMMEUBLE,
-  type IncidentV2,
-} from '@/fixtures/incidents';
+import { useIncidents } from '@/hooks/useIncidents';
+import type { IncidentV2 } from '@/fixtures/incidents';
 import { GradientCard } from '@/components/ui/GradientCard';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SectionLabel } from '@/components/ui/SectionLabel';
@@ -38,6 +35,7 @@ function IncidentListRow({ incident, onPress }: { incident: IncidentV2; onPress?
 export default function IncidentsScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const { mesSignalements, incidentsImmeuble } = useIncidents();
 
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -97,15 +95,16 @@ export default function IncidentsScreen() {
               {/* Mes signalements */}
               <YStack gap={4}>
                 <SectionLabel>Mes signalements</SectionLabel>
-                {MOCK_MES_SIGNALEMENTS.map((incident, index) => (
+                {mesSignalements.map((incident, index) => (
                   <YStack key={incident.id}>
                     {index > 0 && <RowSeparator />}
                     <IncidentListRow
                       incident={incident}
-                      onPress={
-                        incident.id === 'fuite-robinet'
-                          ? () => router.push('/incident-detail')
-                          : undefined
+                      onPress={() =>
+                        router.push({
+                          pathname: '/incident-detail',
+                          params: { id: incident.id },
+                        })
                       }
                     />
                   </YStack>
@@ -115,7 +114,7 @@ export default function IncidentsScreen() {
               {/* Incidents parties communes, visibles par tous */}
               <YStack gap={4}>
                 <SectionLabel>Dans l'immeuble</SectionLabel>
-                {MOCK_INCIDENTS_IMMEUBLE.map((incident, index) => (
+                {incidentsImmeuble.map((incident, index) => (
                   <YStack key={incident.id}>
                     {index > 0 && <RowSeparator />}
                     <IncidentListRow incident={incident} />

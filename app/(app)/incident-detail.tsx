@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ScrollView,
   TextInput,
@@ -6,13 +6,14 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, Image as ImageIcon, Send } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { MOCK_INCIDENT_DETAIL, type IncidentComment } from '@/fixtures/incidents';
+import { useIncidentDetail } from '@/hooks/useIncidents';
+import type { IncidentComment } from '@/fixtures/incidents';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SectionLabel } from '@/components/ui/SectionLabel';
 import { StatusPill } from '@/components/ui/StatusPill';
@@ -162,8 +163,13 @@ function CommentBubble({ comment }: { comment: IncidentComment }) {
 export default function IncidentDetailScreen() {
   const router = useRouter();
   const colors = useThemeColors();
-  const incident = MOCK_INCIDENT_DETAIL;
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { incident } = useIncidentDetail(id);
   const [comments, setComments] = useState<IncidentComment[]>(incident.comments);
+
+  useEffect(() => {
+    setComments(incident.comments);
+  }, [incident.id]);
   const [reply, setReply] = useState('');
 
   const handleSend = () => {

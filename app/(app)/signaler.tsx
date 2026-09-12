@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Image, ScrollView, TextInput, View as RNView } from 'react-native';
+import { Alert, Animated, Image, ScrollView, TextInput, View as RNView } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, Check } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useCreateIncident } from '@/hooks/useIncidents';
 import { INCIDENT_CATEGORIES } from '@/fixtures/incidents';
 import { MOCK_SYNDIC } from '@/fixtures/incidents';
 import { MOCK_APARTMENT } from '@/fixtures/apartment';
@@ -220,6 +221,7 @@ function StepTwo({
   localisation,
   photoCount,
   onSubmit,
+  isSubmitting,
 }: {
   description: string;
   onDescription: (t: string) => void;
@@ -227,8 +229,10 @@ function StepTwo({
   localisation: Localisation;
   photoCount: number;
   onSubmit: () => void;
+  isSubmitting: boolean;
 }) {
   const colors = useThemeColors();
+  const canSubmit = description.trim().length > 0 && !isSubmitting;
   const recap = [
     { label: 'Catégorie', value: category },
     {
@@ -307,7 +311,11 @@ function StepTwo({
       </ScrollView>
 
       <YStack paddingHorizontal={24} paddingTop={16} paddingBottom={24}>
-        <PillButton label="Envoyer au syndic" onPress={onSubmit} />
+        <PillButton
+          label={isSubmitting ? 'Envoi…' : 'Envoyer au syndic'}
+          disabled={!canSubmit}
+          onPress={onSubmit}
+        />
       </YStack>
     </YStack>
   );
@@ -366,11 +374,26 @@ function Confirmation({ onFollow, onHome }: { onFollow: () => void; onHome: () =
 export default function SignalerScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const { createIncident, isCreating } = useCreateIncident();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [photos, setPhotos] = useState<string[]>([]);
   const [localisation, setLocalisation] = useState<Localisation>('logement');
   const [category, setCategory] = useState<string>(INCIDENT_CATEGORIES[0]);
   const [description, setDescription] = useState('');
+  const [createdIncidentId, setCreatedIncidentId] = useState<string | null>(null);
+
+  const handleSubmit = async () => {
+    try {
+      const incident = await createIncident({ description, category, localisation });
+      setCreatedIncidentId(incident.id);
+      setStep(3);
+    } catch {
+      Alert.alert(
+        'Erreur',
+        "Votre signalement n'a pas pu être envoyé. Vérifiez votre connexion et réessayez.",
+      );
+    }
+  };
 
   const handlePickPhotos = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -389,7 +412,12 @@ export default function SignalerScreen() {
       <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
         {step === 3 ? (
           <Confirmation
-            onFollow={() => router.replace('/incident-detail')}
+            onFollow={() =>
+              router.replace({
+                pathname: '/incident-detail',
+                params: createdIncidentId ? { id: createdIncidentId } : undefined,
+              })
+            }
             onHome={() => router.replace('/')}
           />
         ) : (
@@ -423,7 +451,8 @@ export default function SignalerScreen() {
                 category={category}
                 localisation={localisation}
                 photoCount={photos.length}
-                onSubmit={() => setStep(3)}
+                onSubmit={handleSubmit}
+                isSubmitting={isCreating}
               />
             )}
           </YStack>

@@ -1,194 +1,174 @@
-import { useState, useCallback, useMemo } from 'react';
-import { Alert } from 'react-native';
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
-import type { IncidentCategory } from '@/types/database';
+import {
+  fetchMesSignalements,
+  fetchIncidentsImmeuble,
+  fetchIncidentById,
+  fetchCoproprieteCabinetId,
+  insertIncident,
+} from '@/lib/api/incidents';
+import {
+  MOCK_MES_SIGNALEMENTS,
+  MOCK_INCIDENTS_IMMEUBLE,
+  MOCK_INCIDENT_DETAIL,
+  type IncidentV2,
+  type IncidentStatusV2,
+  type IncidentTimelineStep,
+} from '@/fixtures/incidents';
 import type { Database } from '@/types/database';
-import { MOCK_INCIDENTS, MOCK_TRAVAUX, MOCK_SYNDIC, type MockIncident } from '@/fixtures/incidents';
 
 type IncidentRow = Database['public']['Tables']['incidents']['Row'];
-type IncidentInsert = Database['public']['Tables']['incidents']['Insert'];
-type TravauxRow = Database['public']['Tables']['travaux']['Row'];
-type CabinetRow = Database['public']['Tables']['cabinets']['Row'];
+
+function mapStatus(status: string | null): IncidentStatusV2 {
+  switch (status) {
+    case 'En cours':
+      return 'intervention';
+    case 'Résolu':
+      return 'resolu';
+    default:
+      return 'declare';
+  }
+}
+
+function formatDateFr(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
+
+function toIncidentV2(row: IncidentRow, localisation: 'privatif' | 'parties communes'): IncidentV2 {
+  return {
+    id: row.id,
+    title: row.titre,
+    subtitle: `${row.type} · ${localisation} · ${formatDateFr(row.reported_date ?? row.created_at)}`,
+    status: mapStatus(row.status),
+    pulse: row.status === 'En attente',
+  };
+}
 
 export function useIncidents() {
   const user = useAuthStore((s) => s.user);
-  const queryClient = useQueryClient();
-  const [showModal, setShowModal] = useState(false);
+  const coproprieteId = useAuthStore((s) => s.user?.coproprieteId);
 
-  // ── Incidents query ──
-  const incidentsQuery = useQuery({
-    queryKey: ['incidents', user?.id],
-    queryFn: async () => {
-      if (!supabase || !user) return null;
-      const { data, error } = await supabase
-        .from('incidents')
-        .select('*')
-        .eq('created_by', user.id)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!supabase && !!user,
+  const mesSignalementsQuery = useQuery({
+    queryKey: ['incidents', 'mes-signalements', user?.id],
+    queryFn: () => fetchMesSignalements(user!.id),
+    enabled: !!user,
   });
 
-  const incidents: MockIncident[] = useMemo(() => {
-    if (!incidentsQuery.data) return MOCK_INCIDENTS;
-    return incidentsQuery.data.map((inc: IncidentRow) => ({
-      id: inc.id,
-      title: inc.titre,
-      category: inc.type,
-      date: new Date(inc.created_at).toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'short',
-      }),
-      status: (inc.status ?? 'En attente') as MockIncident['status'],
-    }));
-  }, [incidentsQuery.data]);
-
-  // ── Travaux query ──
-  const travauxQuery = useQuery({
-    queryKey: ['travaux'],
-    queryFn: async () => {
-      if (!supabase) return null;
-      const { data, error } = await supabase
-        .from('travaux')
-        .select('*')
-        .in('statut', ['planifie', 'en_cours'])
-        .order('date_debut', { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!supabase,
+  const incidentsImmeubleQuery = useQuery({
+    queryKey: ['incidents', 'immeuble', coproprieteId],
+    queryFn: () => fetchIncidentsImmeuble(coproprieteId!),
+    enabled: !!coproprieteId,
   });
 
-  const travaux = useMemo(() => {
-    if (!travauxQuery.data) return MOCK_TRAVAUX;
-    return travauxQuery.data.map((t: TravauxRow) => ({
-      id: t.id,
-      title: t.titre,
-      entreprise: t.entreprise_nom ?? '',
-      status: (t.statut ?? 'planifie') as 'en_cours' | 'planifie',
-      startDate: t.date_debut
-        ? new Date(t.date_debut).toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          })
-        : '',
-      endDate: t.date_fin_prevue
-        ? new Date(t.date_fin_prevue).toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          })
-        : undefined,
-      detail: [
-        t.entreprise_nom ? `Entreprise : ${t.entreprise_nom}` : null,
-        `Statut : ${t.statut === 'en_cours' ? 'En cours' : 'Planifie'}`,
-        t.date_debut ? `Debut : ${new Date(t.date_debut).toLocaleDateString('fr-FR')}` : null,
-        t.date_fin_prevue
-          ? `Fin prevue : ${new Date(t.date_fin_prevue).toLocaleDateString('fr-FR')}`
-          : null,
-        t.description ?? null,
-      ]
-        .filter(Boolean)
-        .join('\n'),
-    }));
-  }, [travauxQuery.data]);
+  const mesSignalements =
+    mesSignalementsQuery.data && mesSignalementsQuery.data.length > 0
+      ? mesSignalementsQuery.data.map((row) => toIncidentV2(row, 'privatif'))
+      : MOCK_MES_SIGNALEMENTS;
 
-  // ── Syndic (cabinet) query ──
-  const syndicQuery = useQuery({
-    queryKey: ['syndic'],
-    queryFn: async () => {
-      if (!supabase) return null;
-      const { data, error } = await supabase.from('cabinets').select('*').limit(1).maybeSingle();
-      if (error) throw error;
-      return data;
+  const incidentsImmeuble =
+    incidentsImmeubleQuery.data && incidentsImmeubleQuery.data.length > 0
+      ? incidentsImmeubleQuery.data.map((row) => toIncidentV2(row, 'parties communes'))
+      : MOCK_INCIDENTS_IMMEUBLE;
+
+  return {
+    mesSignalements,
+    incidentsImmeuble,
+    isLoading: mesSignalementsQuery.isLoading || incidentsImmeubleQuery.isLoading,
+    error: mesSignalementsQuery.error || incidentsImmeubleQuery.error,
+  };
+}
+
+function buildTimeline(row: IncidentRow): IncidentTimelineStep[] {
+  const steps: IncidentTimelineStep[] = [
+    {
+      label: 'Déclaré',
+      date: row.reported_date ? formatDateFr(row.reported_date) : '',
+      state: 'done',
     },
-    enabled: !!supabase,
+  ];
+
+  if (row.status === 'Résolu' && row.resolved_date) {
+    steps.push({
+      label: 'Intervention',
+      date: row.date_intervention ? formatDateFr(row.date_intervention) : '',
+      state: 'done',
+    });
+    steps.push({ label: 'Résolu', date: formatDateFr(row.resolved_date), state: 'done' });
+  } else if (row.date_intervention) {
+    steps.push({
+      label: 'Intervention planifiée',
+      date: formatDateFr(row.date_intervention),
+      state: 'current',
+    });
+    steps.push({ label: 'Résolu', date: '', state: 'pending' });
+  } else {
+    steps.push({ label: 'Intervention', date: '', state: 'current' });
+    steps.push({ label: 'Résolu', date: '', state: 'pending' });
+  }
+
+  return steps;
+}
+
+export function useIncidentDetail(id: string | undefined) {
+  const query = useQuery({
+    queryKey: ['incidents', 'detail', id],
+    queryFn: () => fetchIncidentById(id!),
+    enabled: !!id,
   });
 
-  const syndic = useMemo(() => {
-    if (!syndicQuery.data) return MOCK_SYNDIC;
-    const cab: CabinetRow = syndicQuery.data;
+  const row = query.data;
+
+  const incident = useMemo(() => {
+    if (!row) return MOCK_INCIDENT_DETAIL;
     return {
-      name: cab.nom,
-      phone: cab.telephone ?? '',
-      email: cab.email_contact ?? '',
+      id: row.id,
+      title: row.titre,
+      subtitle: `${row.type} · déclaré le ${row.reported_date ? formatDateFr(row.reported_date) : ''}`,
+      status: mapStatus(row.status),
+      photos: row.photos?.length ?? 0,
+      timeline: buildTimeline(row),
+      comments: [],
     };
-  }, [syndicQuery.data]);
+  }, [row]);
 
-  // ── Create incident mutation ──
-  const createIncidentMutation = useMutation({
-    mutationFn: async (newIncident: IncidentInsert) => {
-      if (!supabase) throw new Error('Service indisponible');
-      const { data, error } = await supabase
-        .from('incidents')
-        .insert(newIncident)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+  return { incident, isLoading: query.isLoading, error: query.error };
+}
+
+export function useCreateIncident() {
+  const user = useAuthStore((s) => s.user);
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async (input: {
+      description: string;
+      category: string;
+      localisation: 'logement' | 'communes';
+    }) => {
+      if (!user?.coproprieteId) throw new Error('Copropriété inconnue');
+      const cabinetId = await fetchCoproprieteCabinetId(user.coproprieteId);
+      if (!cabinetId) throw new Error('Cabinet de gestion introuvable');
+
+      const titre = input.description.trim().slice(0, 60) || input.category;
+
+      return insertIncident({
+        titre,
+        description: input.description.trim(),
+        type: input.category,
+        created_by: user.id,
+        cabinet_id: cabinetId,
+        copropriete_id: user.coproprieteId,
+        apartment_id: input.localisation === 'logement' ? (user.apartmentId ?? null) : null,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
     },
   });
 
-  const createIncident = useCallback(
-    (data: { title: string; category: IncidentCategory; description: string }) => {
-      // Optimistic local update for immediate UI feedback
-      const newIncident: MockIncident = {
-        id: String(Date.now()),
-        title: data.title,
-        category: data.category,
-        date: "Aujourd'hui",
-        status: 'En attente',
-      };
-
-      // If supabase is connected, also persist remotely
-      if (supabase && user) {
-        createIncidentMutation.mutate({
-          titre: data.title,
-          type: data.category,
-          description: data.description,
-          status: 'En attente',
-          created_by: user.id,
-          cabinet_id: syndicQuery.data?.id ?? '',
-          copropriete_id: '',
-        });
-      }
-
-      // Keep the same behavior as before for immediate feedback
-      setShowModal(false);
-      Alert.alert(
-        'Signalement envoye !',
-        `Votre signalement "${data.title}" a ete transmis au syndic.`,
-      );
-    },
-    [user, createIncidentMutation, syndicQuery.data],
-  );
-
-  const openModal = useCallback(() => {
-    setShowModal(true);
-  }, []);
-
-  const closeModal = useCallback(() => {
-    setShowModal(false);
-  }, []);
-
   return {
-    incidents,
-    travaux,
-    syndic,
-    showModal,
-    createIncident,
-    openModal,
-    closeModal,
-    isLoading: incidentsQuery.isLoading || travauxQuery.isLoading || syndicQuery.isLoading,
-    error: incidentsQuery.error || travauxQuery.error || syndicQuery.error,
-    isCreating: createIncidentMutation.isPending,
+    createIncident: mutation.mutateAsync,
+    isCreating: mutation.isPending,
+    error: mutation.error,
   };
 }
