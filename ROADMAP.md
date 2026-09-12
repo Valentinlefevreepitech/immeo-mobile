@@ -25,7 +25,7 @@ Document de suivi du chantier de refonte (`PROMPT_CLAUDE_CODE.md`, 8 phases) et 
 
 **Phase 7** n'a nécessité que la migration mécanique `useThemeColors()` sur AG/Documents/Notifications (déjà quasi conformes à la spec).
 
-**Bonus hors-phases** : ajout d'un vrai sélecteur de thème Clair/Sombre/Système dans Profil > Apparence (`1d8b7ff`) — le `themeStore` existait déjà en infra mais n'était piloté par aucun écran. Un bug de fond blanc codé en dur (`#F7FCFB`) cassant la lisibilité en mode sombre a aussi été trouvé et corrigé sur les zones photo de `signaler.tsx` et `entraide-annonce.tsx` (`518d756`).
+**Bonus hors-phases** : un sélecteur de thème Clair/Sombre/Système avait été ajouté dans Profil > Apparence (`1d8b7ff`), puis **retiré sur demande utilisateur** (`b34f2b2`) — préférence pour suivre uniquement le thème système, sans bouton manuel. Un bug de fond blanc codé en dur (`#F7FCFB`) cassant la lisibilité en mode sombre a aussi été trouvé et corrigé sur les zones photo de `signaler.tsx` et `entraide-annonce.tsx` (`518d756`), ce correctif reste en place.
 
 **Phase 8** reste à faire et nécessitera un accès au projet Supabase réel.
 
