@@ -3,11 +3,12 @@ import { Animated, ScrollView, View as RNView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BarChart3, Check, ChevronRight } from 'lucide-react-native';
+import { BarChart3, Check, ChevronRight, Trash2 } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSondages } from '@/hooks/useSondages';
 import type { Sondage, SondageOption } from '@/fixtures/sondages';
 import { MOCK_PANNEAU, MOCK_FIL_ACTUALITE } from '@/fixtures/copro';
+import { MOCK_POUBELLES, type PoubelleCouleur } from '@/fixtures/poubelles';
 import { Avatar } from '@/components/ui/Avatar';
 import { GradientCard } from '@/components/ui/GradientCard';
 import { SectionLabel } from '@/components/ui/SectionLabel';
@@ -16,6 +17,63 @@ import { SegmentedTabs } from '@/components/ui/SegmentedTabs';
 import { TabSlideTransition } from '@/components/ui/TabSlideTransition';
 
 type CoproTab = 'annonces' | 'sondages';
+
+function poubelleColor(colors: ReturnType<typeof useThemeColors>, couleur: PoubelleCouleur) {
+  switch (couleur) {
+    case 'warning':
+      return colors.warning;
+    case 'success':
+      return colors.success;
+    case 'secondary':
+      return colors.secondary[500];
+    default:
+      return colors.text.muted;
+  }
+}
+
+/** Carte de rappel des jours de sortie des poubelles (référence, pas une annonce datée). */
+function PoubellesCard() {
+  const colors = useThemeColors();
+  return (
+    <YStack gap={12}>
+      <XStack alignItems="center" gap={8}>
+        <Trash2 size={16} color={colors.text.muted} strokeWidth={2} />
+        <SectionLabel marginBottom={0}>Sortie des poubelles</SectionLabel>
+      </XStack>
+      <YStack backgroundColor={colors.surface.card} borderRadius={20} paddingHorizontal={6}>
+        {MOCK_POUBELLES.map((poubelle, index) => (
+          <YStack key={poubelle.id}>
+            {index > 0 && <RowSeparator />}
+            <ListRow paddingVertical={12} aria-label={poubelle.type}>
+              <View
+                width={10}
+                height={10}
+                borderRadius={5}
+                backgroundColor={poubelleColor(colors, poubelle.couleur)}
+              />
+              <YStack flex={1}>
+                <Text fontFamily="$body" fontSize={15} fontWeight="600" color={colors.text.primary}>
+                  {poubelle.type}
+                </Text>
+                <Text fontFamily="$body" fontSize={13} fontWeight="400" color={colors.text.muted}>
+                  {poubelle.consigne}
+                </Text>
+              </YStack>
+              <Text
+                fontFamily="$heading"
+                fontSize={13}
+                fontWeight="700"
+                color={colors.text.primary}
+              >
+                {poubelle.joursLabel}
+              </Text>
+            </ListRow>
+          </YStack>
+        ))}
+      </YStack>
+    </YStack>
+  );
+}
 
 function AnnoncesTab() {
   const colors = useThemeColors();
@@ -72,6 +130,9 @@ function AnnoncesTab() {
           </YStack>
         ))}
       </YStack>
+
+      {/* Sortie des poubelles */}
+      <PoubellesCard />
 
       {/* Fil d'actualité */}
       <YStack gap={4} paddingBottom={130}>
