@@ -2,19 +2,10 @@ import { useState } from 'react';
 import { Alert, ScrollView, View as RNView } from 'react-native';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  ChevronRight,
-  LogOut,
-  Moon,
-  ShieldCheck,
-  Smartphone,
-  Sun,
-  User,
-} from 'lucide-react-native';
+import { ChevronRight, LogOut, ShieldCheck, User } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useProfile } from '@/hooks/useProfile';
 import { useRoleStore, ROLE_LABELS } from '@/stores/roleStore';
-import { useThemeStore, type ThemeMode } from '@/stores/themeStore';
 import { MOCK_APARTMENT } from '@/fixtures/apartment';
 import { Avatar } from '@/components/ui/Avatar';
 import { Toggle } from '@/components/ui/Toggle';
@@ -76,54 +67,6 @@ function AccountRow({
       </Text>
       <ChevronRight size={16} color={colors.text.disabled} strokeWidth={2} />
     </ListRow>
-  );
-}
-
-const THEME_OPTIONS: { key: ThemeMode; label: string; icon: typeof Sun }[] = [
-  { key: 'light', label: 'Clair', icon: Sun },
-  { key: 'dark', label: 'Sombre', icon: Moon },
-  { key: 'system', label: 'Système', icon: Smartphone },
-];
-
-function ThemeModeSelector() {
-  const colors = useThemeColors();
-  const mode = useThemeStore((s) => s.mode);
-  const setMode = useThemeStore((s) => s.setMode);
-
-  return (
-    <XStack backgroundColor={colors.surface.card} borderRadius={999} padding={4} role="tablist">
-      {THEME_OPTIONS.map((option) => {
-        const isActive = mode === option.key;
-        const Icon = option.icon;
-        return (
-          <XStack
-            key={option.key}
-            flex={1}
-            alignItems="center"
-            justifyContent="center"
-            gap={6}
-            paddingVertical={10}
-            borderRadius={999}
-            backgroundColor={isActive ? colors.primary[500] : 'transparent'}
-            pressStyle={{ scale: 0.97 }}
-            onPress={() => setMode(option.key)}
-            role="radio"
-            aria-label={option.label}
-            aria-selected={isActive}
-          >
-            <Icon size={14} color={isActive ? colors.white : colors.text.muted} strokeWidth={2} />
-            <Text
-              fontFamily="$body"
-              fontSize={13}
-              fontWeight={isActive ? '600' : '500'}
-              color={isActive ? colors.white : colors.text.muted}
-            >
-              {option.label}
-            </Text>
-          </XStack>
-        );
-      })}
-    </XStack>
   );
 }
 
@@ -218,21 +161,6 @@ export default function ProfilScreen() {
                     Alert.alert('Sécurité', 'La gestion du mot de passe sera bientôt disponible.')
                   }
                 />
-              </YStack>
-
-              {/* Apparence */}
-              <YStack gap={14}>
-                <Text
-                  fontFamily="$heading"
-                  fontSize={20}
-                  fontWeight="700"
-                  letterSpacing={-0.4}
-                  color={colors.text.primary}
-                  role="heading"
-                >
-                  Apparence
-                </Text>
-                <ThemeModeSelector />
               </YStack>
 
               {/* Consentements RGPD */}
