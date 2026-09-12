@@ -136,11 +136,9 @@ describe('useEntraide', () => {
 
     act(() => {
       result.current.publierAnnonce({
-        type: 'objet',
         titre: 'Nettoyeur haute pression',
         categorie: 'Bricolage',
         duree: '48h',
-        visibleImmeuble: true,
       });
     });
 

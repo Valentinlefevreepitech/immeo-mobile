@@ -8,16 +8,13 @@ import {
   type DemandeRecue,
   type MaDemande,
   type MonAnnonce,
-  type EntraideType,
   type EntraideCategorie,
 } from '@/fixtures/entraide';
 
 export interface PublierAnnonceInput {
-  type: EntraideType;
   titre: string;
   categorie: EntraideCategorie;
   duree: string;
-  visibleImmeuble: boolean;
   proprietaireNom?: string;
   proprietaireInitials?: string;
   proprietaireEtage?: string;
@@ -27,6 +24,7 @@ const CATEGORIE_ICONS: Record<EntraideCategorie, EntraideOffer['icon']> = {
   Bricolage: 'wrench',
   Cuisine: 'utensils',
   Services: 'hand-helping',
+  Autres: 'package',
 };
 
 interface EntraideState {
@@ -76,9 +74,12 @@ export const useEntraideStore = create<EntraideState>((set, get) => ({
   publierAnnonce: (input) => {
     const id = `annonce-${Date.now()}`;
     const nom = input.proprietaireNom ?? 'Vous';
+    // Le type objet/service est deduit de la categorie (le tag suffit a
+    // differencier, pas besoin d'un choix separe dans le formulaire).
+    const type = input.categorie === 'Services' ? 'service' : 'objet';
     const newOffer: EntraideOffer = {
       id,
-      type: input.type,
+      type,
       titre: input.titre,
       categorie: input.categorie,
       icon: CATEGORIE_ICONS[input.categorie],
@@ -87,8 +88,8 @@ export const useEntraideStore = create<EntraideState>((set, get) => ({
         initials: input.proprietaireInitials ?? nom.slice(0, 2).toUpperCase(),
         etage: input.proprietaireEtage ?? 'Vous',
       },
-      condition: input.type === 'service' ? 'à organiser' : `prêt ${input.duree}`,
-      ctaLabel: input.type === 'service' ? 'Je participe' : 'Demander',
+      condition: type === 'service' ? 'à organiser' : `prêt ${input.duree}`,
+      ctaLabel: type === 'service' ? 'Je participe' : 'Demander',
       statut: 'disponible',
       demandeEnvoyee: false,
       description: `Proposé par ${nom}.`,

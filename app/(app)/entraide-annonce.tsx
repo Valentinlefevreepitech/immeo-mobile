@@ -8,15 +8,9 @@ import { Camera } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useEntraide } from '@/hooks/useEntraide';
 import { useAuthStore } from '@/stores/authStore';
-import {
-  ENTRAIDE_CATEGORIES,
-  ENTRAIDE_DUREES,
-  type EntraideCategorie,
-  type EntraideType,
-} from '@/fixtures/entraide';
+import { ENTRAIDE_CATEGORIES, ENTRAIDE_DUREES, type EntraideCategorie } from '@/fixtures/entraide';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { PillButton } from '@/components/ui/PillButton';
-import { Toggle } from '@/components/ui/Toggle';
 
 export default function EntraideAnnonceScreen() {
   const router = useRouter();
@@ -25,12 +19,10 @@ export default function EntraideAnnonceScreen() {
   const fullName = useAuthStore((s) => s.user?.fullName);
   const initials = useAuthStore((s) => s.user?.initials);
 
-  const [type, setType] = useState<EntraideType>('objet');
   const [photo, setPhoto] = useState<string | null>(null);
   const [titre, setTitre] = useState('');
   const [categorie, setCategorie] = useState<EntraideCategorie>(ENTRAIDE_CATEGORIES[0]);
   const [duree, setDuree] = useState<(typeof ENTRAIDE_DUREES)[number]>('48h');
-  const [visibleImmeuble, setVisibleImmeuble] = useState(true);
 
   const canPublish = titre.trim().length > 0;
 
@@ -47,11 +39,9 @@ export default function EntraideAnnonceScreen() {
   const handlePublish = () => {
     if (!canPublish) return;
     publierAnnonce({
-      type,
       titre: titre.trim(),
       categorie,
       duree,
-      visibleImmeuble,
       proprietaireNom: fullName || 'Vous',
       proprietaireInitials: initials || undefined,
       proprietaireEtage: '3ème',
@@ -75,50 +65,6 @@ export default function EntraideAnnonceScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Type */}
-          <XStack backgroundColor={colors.surface.card} borderRadius={999} padding={4}>
-            {(
-              [
-                { key: 'objet', label: 'Je prête un objet' },
-                { key: 'service', label: 'Je propose un service' },
-              ] as const
-            ).map((opt) => {
-              const isActive = type === opt.key;
-              return (
-                <View
-                  key={opt.key}
-                  flex={1}
-                  paddingVertical={10}
-                  borderRadius={999}
-                  alignItems="center"
-                  backgroundColor={isActive ? colors.white : 'transparent'}
-                  {...(isActive
-                    ? {
-                        shadowColor: '#0B0F0E',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.08,
-                        shadowRadius: 8,
-                        elevation: 3,
-                      }
-                    : {})}
-                  onPress={() => setType(opt.key)}
-                  role="radio"
-                  aria-label={opt.label}
-                  aria-selected={isActive}
-                >
-                  <Text
-                    fontFamily="$body"
-                    fontSize={13}
-                    fontWeight={isActive ? '600' : '500'}
-                    color={isActive ? colors.primary[500] : colors.text.muted}
-                  >
-                    {opt.label}
-                  </Text>
-                </View>
-              );
-            })}
-          </XStack>
-
           {/* Photo */}
           <YStack
             borderWidth={2}
@@ -244,30 +190,6 @@ export default function EntraideAnnonceScreen() {
               })}
             </XStack>
           </YStack>
-
-          {/* Visibilité */}
-          <XStack
-            alignItems="center"
-            gap={12}
-            backgroundColor={colors.surface.card}
-            borderRadius={20}
-            padding={18}
-          >
-            <Text
-              flex={1}
-              fontFamily="$body"
-              fontSize={14}
-              fontWeight="600"
-              color={colors.text.primary}
-            >
-              Visible par tout l'immeuble
-            </Text>
-            <Toggle
-              value={visibleImmeuble}
-              onValueChange={setVisibleImmeuble}
-              aria-label="Visible par tout l'immeuble"
-            />
-          </XStack>
 
           <Text
             fontFamily="$body"

@@ -2,7 +2,7 @@ import { ScrollView, View as RNView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Hammer, HandHelping, Utensils, Wrench } from 'lucide-react-native';
+import { Hammer, HandHelping, Package, Utensils, Wrench } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useEntraide } from '@/hooks/useEntraide';
 import { Avatar } from '@/components/ui/Avatar';
@@ -11,7 +11,13 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { PillButton } from '@/components/ui/PillButton';
 import { PageTransition } from '@/components/ui/PageTransition';
 
-const ICONS = { wrench: Wrench, utensils: Utensils, hammer: Hammer, 'hand-helping': HandHelping };
+const ICONS = {
+  wrench: Wrench,
+  utensils: Utensils,
+  hammer: Hammer,
+  'hand-helping': HandHelping,
+  package: Package,
+};
 
 export default function EntraideFicheScreen() {
   const router = useRouter();

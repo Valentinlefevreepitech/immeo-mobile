@@ -9,6 +9,7 @@ import {
   HandHelping,
   ListChecks,
   MessageCircle,
+  Package,
   Utensils,
   Wrench,
 } from 'lucide-react-native';
@@ -30,6 +31,7 @@ const ENTRAIDE_ICONS = {
   utensils: Utensils,
   hammer: Hammer,
   'hand-helping': HandHelping,
+  package: Package,
 };
 
 function OfferCard({ offer }: { offer: EntraideOffer }) {

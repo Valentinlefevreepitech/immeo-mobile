@@ -4,7 +4,7 @@
 // apres acceptation.
 // ─────────────────────────────────────────────────────────────
 
-export type EntraideCategorie = 'Bricolage' | 'Cuisine' | 'Services';
+export type EntraideCategorie = 'Bricolage' | 'Cuisine' | 'Services' | 'Autres';
 export type EntraideType = 'objet' | 'service';
 export type EntraideStatutOffre = 'disponible' | 'emprunte';
 
@@ -13,7 +13,7 @@ export interface EntraideOffer {
   type: EntraideType;
   titre: string;
   categorie: EntraideCategorie;
-  icon: 'wrench' | 'utensils' | 'hammer' | 'hand-helping';
+  icon: 'wrench' | 'utensils' | 'hammer' | 'hand-helping' | 'package';
   proprietaire: { nom: string; initials: string; etage: string; role?: 'gardien' };
   condition: string;
   ctaLabel: string;
@@ -152,6 +152,7 @@ export const ENTRAIDE_CATEGORIES: readonly EntraideCategorie[] = [
   'Bricolage',
   'Cuisine',
   'Services',
+  'Autres',
 ];
 
 export const ENTRAIDE_DUREES = ['Quelques heures', '48h', '1 semaine'] as const;
