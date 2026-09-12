@@ -36,10 +36,11 @@ Document de suivi du chantier de refonte (`PROMPT_CLAUDE_CODE.md`, 8 phases) et 
 ## 2. Backlog — prochains projets
 
 ### 2.1 Refonte du login (priorité : préparer la mise en prod)
-- Remplacer le flow actuel par un système classique **register/login** (email + mot de passe).
-- Ajouter la connexion **Google** dans un second temps.
-- Après connexion : flow pour **rejoindre ou créer une copropriété** (actuellement tout est hardcodé sur "Résidence Les Jardins" via `DEMO_USER`).
-- Fichiers concernés probables : `app/(auth)/login.tsx` (740 lignes actuellement, login+register combinés), `stores/authStore.ts`, `app/(auth)/invitation.tsx` (le flow d'activation par invitation existe déjà et pourra servir de base pour le "rejoindre une copro").
+✅ **Partiellement fait** (12/09/2026).
+- **Register/login classique** : en explorant le code, ça existait déjà et fonctionne réellement — `app/(auth)/login.tsx` (formulaire connexion/inscription, validation email, jauge de force du mot de passe) branché sur `stores/authStore.ts` qui appelle vraiment `supabase.auth.signInWithPassword`/`signUp`. Rien à reconstruire ici.
+- **Rejoindre ou créer une copropriété** : la vraie pièce manquante, maintenant faite. Nouvel écran `app/(auth)/copro-setup.tsx` (choix rejoindre/créer, code à 6 caractères ou nom+adresse, confirmation avec code généré à partager) + `useAuthGuard.ts` étendu pour y rediriger tout utilisateur connecté dont `user.coproprieteId` est vide + nouvelle action `authStore.setCopropriete()`. `DEMO_USER` a désormais un `coproprieteId` non-null (`'demo-copro'`) pour ne pas casser l'auto-connexion des previews de dev.
+- **Connexion Google** : reste un placeholder ("bientôt disponible") — nécessite un vrai projet Supabase + des identifiants OAuth Google que seul l'utilisateur peut fournir (bloqué par la Phase 8, même contrainte que le reste du backend).
+- **Mot de passe oublié** : reste aussi un `Alert.alert` placeholder, pas touché.
 
 ### 2.2 Messagerie privée entre locataires — à revoir
 - Aujourd'hui : **pas de messagerie P2P résident** (choix P0 assumé, voir commentaire dans `fixtures/copro.ts` — uniquement syndic + gardien).

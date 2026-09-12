@@ -29,6 +29,7 @@ interface AuthState {
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
   setLoading: (loading: boolean) => void;
+  setCopropriete: (coproprieteId: string) => void;
 }
 
 const ALLOWED_ROLES = ['resident', 'tenant'];
@@ -43,7 +44,7 @@ const DEMO_USER: UserProfile = {
   role: 'tenant',
   firstName: 'Valentin',
   lastName: 'Lefevre',
-  coproprieteId: null,
+  coproprieteId: 'demo-copro',
   apartmentId: null,
 };
 
@@ -222,4 +223,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   setLoading: (loading) => set({ isLoading: loading }),
+
+  setCopropriete: (coproprieteId) => {
+    // Pas d'appel reseau ici : aucun projet Supabase connecte dans cet
+    // environnement. Le vrai rattachement (RPC/Edge Function) arrivera
+    // avec la Phase 8.
+    set((state) => (state.user ? { user: { ...state.user, coproprieteId } } : state));
+  },
 }));
