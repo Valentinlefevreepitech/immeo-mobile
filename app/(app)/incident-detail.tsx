@@ -11,7 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, Image as ImageIcon, Send } from 'lucide-react-native';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { MOCK_INCIDENT_DETAIL, type IncidentComment } from '@/fixtures/incidents';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SectionLabel } from '@/components/ui/SectionLabel';
@@ -21,6 +21,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { PageTransition } from '@/components/ui/PageTransition';
 
 function PhotoPlaceholder({ tones }: { tones: readonly [string, string] }) {
+  const colors = useThemeColors();
   return (
     <LinearGradient
       colors={tones}
@@ -50,6 +51,7 @@ function TimelineStep({
   state: 'done' | 'current' | 'pending';
   isLast: boolean;
 }) {
+  const colors = useThemeColors();
   return (
     <XStack gap={14}>
       <YStack alignItems="center" width={22}>
@@ -103,6 +105,7 @@ function TimelineStep({
 }
 
 function CommentBubble({ comment }: { comment: IncidentComment }) {
+  const colors = useThemeColors();
   if (comment.from === 'syndic') {
     return (
       <XStack gap={10}>
@@ -158,6 +161,7 @@ function CommentBubble({ comment }: { comment: IncidentComment }) {
 
 export default function IncidentDetailScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const incident = MOCK_INCIDENT_DETAIL;
   const [comments, setComments] = useState<IncidentComment[]>(incident.comments);
   const [reply, setReply] = useState('');

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronRight, Plus } from 'lucide-react-native';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import {
   MOCK_MES_SIGNALEMENTS,
   MOCK_INCIDENTS_IMMEUBLE,
@@ -18,9 +18,10 @@ import { PulsingDot } from '@/components/ui/PulsingDot';
 import { PageTransition } from '@/components/ui/PageTransition';
 
 function IncidentListRow({ incident, onPress }: { incident: IncidentV2; onPress?: () => void }) {
+  const colors = useThemeColors();
   return (
     <ListRow onPress={onPress} aria-label={incident.title}>
-      <PulsingDot color={statusDotColor(incident.status)} pulse={incident.pulse} />
+      <PulsingDot color={statusDotColor(incident.status, colors)} pulse={incident.pulse} />
       <YStack flex={1}>
         <Text fontFamily="$body" fontSize={15} fontWeight="600" color={colors.text.primary}>
           {incident.title}
@@ -36,6 +37,7 @@ function IncidentListRow({ incident, onPress }: { incident: IncidentV2; onPress?
 
 export default function IncidentsScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
 
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>

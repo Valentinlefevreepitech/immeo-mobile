@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, Check } from 'lucide-react-native';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { INCIDENT_CATEGORIES } from '@/fixtures/incidents';
 import { MOCK_SYNDIC } from '@/fixtures/incidents';
 import { MOCK_APARTMENT } from '@/fixtures/apartment';
@@ -17,6 +17,7 @@ type Localisation = 'logement' | 'communes';
 
 /** Segment de barre de progression, remplissage animé (origin left). */
 function ProgressSegment({ filled }: { filled: boolean }) {
+  const colors = useThemeColors();
   const anim = useRef(new Animated.Value(filled ? 1 : 0)).current;
 
   useEffect(() => {
@@ -66,6 +67,7 @@ function StepOne({
   onCategory: (c: string) => void;
   onContinue: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <YStack flex={1}>
       <ScrollView
@@ -226,6 +228,7 @@ function StepTwo({
   photoCount: number;
   onSubmit: () => void;
 }) {
+  const colors = useThemeColors();
   const recap = [
     { label: 'Catégorie', value: category },
     {
@@ -311,6 +314,7 @@ function StepTwo({
 }
 
 function Confirmation({ onFollow, onHome }: { onFollow: () => void; onHome: () => void }) {
+  const colors = useThemeColors();
   const pop = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -361,6 +365,7 @@ function Confirmation({ onFollow, onHome }: { onFollow: () => void; onHome: () =
 
 export default function SignalerScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [photos, setPhotos] = useState<string[]>([]);
   const [localisation, setLocalisation] = useState<Localisation>('logement');
