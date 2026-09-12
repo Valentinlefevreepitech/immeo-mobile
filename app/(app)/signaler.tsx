@@ -399,7 +399,7 @@ export default function SignalerScreen() {
                 title={step === 1 ? 'Nouvel incident' : 'Décrivez le problème'}
                 subtitle={`Étape ${step} sur 2`}
                 icon={step === 1 ? 'close' : 'back'}
-                onBack={() => (step === 1 ? router.back() : setStep(1))}
+                onBack={() => (step === 1 ? router.replace('/incidents') : setStep(1))}
               />
             </YStack>
             <XStack paddingHorizontal={24} paddingTop={8} gap={6}>

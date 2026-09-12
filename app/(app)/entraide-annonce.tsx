@@ -56,14 +56,18 @@ export default function EntraideAnnonceScreen() {
       proprietaireInitials: initials || undefined,
       proprietaireEtage: '3ème',
     });
-    router.replace('/(app)/copro');
+    router.replace('/entraide');
   };
 
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
         <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={16}>
-          <ScreenHeader title="Nouvelle annonce" icon="close" onBack={() => router.back()} />
+          <ScreenHeader
+            title="Nouvelle annonce"
+            icon="close"
+            onBack={() => router.replace('/entraide')}
+          />
         </YStack>
 
         <ScrollView

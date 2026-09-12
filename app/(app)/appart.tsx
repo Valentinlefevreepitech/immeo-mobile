@@ -26,7 +26,7 @@ export default function AppartScreen() {
             showsVerticalScrollIndicator={false}
           >
             <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={16}>
-              <ScreenHeader title="Mon appart" onBack={() => router.back()} />
+              <ScreenHeader title="Mon appart" onBack={() => router.replace('/profil')} />
             </YStack>
 
             <YStack paddingHorizontal={24} gap={26}>

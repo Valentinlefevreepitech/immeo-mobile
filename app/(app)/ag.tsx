@@ -102,7 +102,7 @@ export default function AgScreen() {
             showsVerticalScrollIndicator={false}
           >
             <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={16}>
-              <ScreenHeader title="Assemblée générale" onBack={() => router.back()} />
+              <ScreenHeader title="Assemblée générale" onBack={() => router.replace('/')} />
             </YStack>
 
             <YStack paddingHorizontal={24} gap={24}>

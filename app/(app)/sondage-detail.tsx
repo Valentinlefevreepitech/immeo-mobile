@@ -106,7 +106,7 @@ export default function SondageDetailScreen() {
       <RNView style={{ flex: 1, backgroundColor: colors.background }}>
         <SafeAreaView edges={['top']} style={{ flex: 1 }}>
           <YStack padding={24}>
-            <ScreenHeader title="Sondage" onBack={() => router.back()} />
+            <ScreenHeader title="Sondage" onBack={() => router.replace('/copro')} />
           </YStack>
         </SafeAreaView>
       </RNView>
@@ -138,7 +138,7 @@ export default function SondageDetailScreen() {
               <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={16}>
                 <ScreenHeader
                   title="Sondage"
-                  onBack={() => router.back()}
+                  onBack={() => router.replace('/copro')}
                   trailing={
                     <View
                       paddingHorizontal={12}

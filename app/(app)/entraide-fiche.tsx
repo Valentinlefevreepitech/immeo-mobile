@@ -31,7 +31,7 @@ export default function EntraideFicheScreen() {
             showsVerticalScrollIndicator={false}
           >
             <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={16}>
-              <ScreenHeader title="" onBack={() => router.back()} />
+              <ScreenHeader title="" onBack={() => router.replace('/entraide')} />
             </YStack>
 
             <YStack paddingHorizontal={24} gap={22}>

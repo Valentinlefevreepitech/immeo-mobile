@@ -34,7 +34,7 @@ export default function EntraideDemandeScreen() {
           <Confirmation
             prenom={prenom}
             onSuivre={() => router.replace('/entraide-gestion')}
-            onRetour={() => router.replace('/(app)/copro')}
+            onRetour={() => router.replace('/entraide')}
           />
         </SafeAreaView>
       </RNView>
@@ -45,7 +45,11 @@ export default function EntraideDemandeScreen() {
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
         <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={16}>
-          <ScreenHeader title="Demander" subtitle={offer.titre} onBack={() => router.back()} />
+          <ScreenHeader
+            title="Demander"
+            subtitle={offer.titre}
+            onBack={() => router.replace({ pathname: '/entraide-fiche', params: { id: offer.id } })}
+          />
         </YStack>
 
         <ScrollView

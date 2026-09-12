@@ -48,7 +48,7 @@ export default function IncidentsScreen() {
             showsVerticalScrollIndicator={false}
           >
             <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={16}>
-              <ScreenHeader title="Incidents" onBack={() => router.back()} />
+              <ScreenHeader title="Incidents" onBack={() => router.replace('/')} />
             </YStack>
 
             <YStack paddingHorizontal={24} gap={24}>

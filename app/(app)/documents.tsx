@@ -61,7 +61,7 @@ export default function DocumentsScreen() {
             showsVerticalScrollIndicator={false}
           >
             <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={16}>
-              <ScreenHeader title="Documents" onBack={() => router.back()} />
+              <ScreenHeader title="Documents" onBack={() => router.replace('/')} />
             </YStack>
 
             <YStack paddingHorizontal={24} gap={22}>

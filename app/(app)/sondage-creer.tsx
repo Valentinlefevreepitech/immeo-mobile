@@ -483,7 +483,7 @@ export default function SondageCreerScreen() {
                 title={step === 1 ? 'Nouveau sondage' : 'Paramètres du sondage'}
                 subtitle={`Étape ${step} sur 2`}
                 icon={step === 1 ? 'close' : 'back'}
-                onBack={() => (step === 1 ? router.back() : setStep(1))}
+                onBack={() => (step === 1 ? router.replace('/copro') : setStep(1))}
               />
             </YStack>
             <XStack paddingHorizontal={24} paddingTop={8} gap={6}>

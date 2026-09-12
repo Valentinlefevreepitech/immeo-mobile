@@ -190,7 +190,7 @@ export default function IncidentDetailScreen() {
                 <ScreenHeader
                   title={incident.title}
                   subtitle={incident.subtitle}
-                  onBack={() => router.back()}
+                  onBack={() => router.replace('/incidents')}
                   trailing={<StatusPill status={incident.status} />}
                 />
               </YStack>

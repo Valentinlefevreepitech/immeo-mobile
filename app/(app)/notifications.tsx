@@ -38,7 +38,7 @@ export default function NotificationsScreen() {
             showsVerticalScrollIndicator={false}
           >
             <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={16}>
-              <ScreenHeader title="Notifications" onBack={() => router.back()} />
+              <ScreenHeader title="Notifications" onBack={() => router.replace('/')} />
             </YStack>
 
             <YStack paddingHorizontal={24}>

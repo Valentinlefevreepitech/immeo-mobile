@@ -27,7 +27,7 @@ export default function EntraideGestionScreen() {
             showsVerticalScrollIndicator={false}
           >
             <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={16}>
-              <ScreenHeader title="Mes prêts" onBack={() => router.back()} />
+              <ScreenHeader title="Mes prêts" onBack={() => router.replace('/entraide')} />
             </YStack>
 
             <YStack paddingHorizontal={24} gap={26}>
