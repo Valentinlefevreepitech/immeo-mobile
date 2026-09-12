@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Hammer,
   HandHelping,
+  ListChecks,
   MessageCircle,
   Utensils,
   Wrench,
@@ -445,7 +446,7 @@ function SondagesTab() {
   );
 }
 
-function OfferCard({ offer, onDemander }: { offer: EntraideOffer; onDemander: () => void }) {
+function OfferCard({ offer }: { offer: EntraideOffer }) {
   const colors = useThemeColors();
   const router = useRouter();
   const Icon = ENTRAIDE_ICONS[offer.icon];
@@ -508,7 +509,9 @@ function OfferCard({ offer, onDemander }: { offer: EntraideOffer; onDemander: ()
           backgroundColor={offer.demandeEnvoyee ? colors.successBg : colors.primary[500]}
           onPress={(e: { stopPropagation?: () => void }) => {
             e?.stopPropagation?.();
-            if (!offer.demandeEnvoyee) onDemander();
+            if (!offer.demandeEnvoyee) {
+              router.push({ pathname: '/entraide-demande', params: { id: offer.id } });
+            }
           }}
           pressStyle={{ scale: 0.96 }}
           role="button"
@@ -531,11 +534,16 @@ function OfferCard({ offer, onDemander }: { offer: EntraideOffer; onDemander: ()
 function EntraideTab() {
   const colors = useThemeColors();
   const router = useRouter();
-  const { offers, mesDemandes, demander } = useEntraide();
+  const { offers, demandesRecues, mesAnnonces } = useEntraide();
   const [filter, setFilter] = useState<'Tout' | EntraideCategorie>('Tout');
 
   const filtered = filter === 'Tout' ? offers : offers.filter((o) => o.categorie === filter);
   const filterOptions: ('Tout' | EntraideCategorie)[] = ['Tout', ...ENTRAIDE_CATEGORIES];
+  const enAttente = demandesRecues.filter((d) => d.statut === 'pending').length;
+  const gestionSubtitle =
+    enAttente > 0
+      ? `${enAttente} demande${enAttente > 1 ? 's' : ''} à traiter`
+      : `${mesAnnonces.length} annonce${mesAnnonces.length > 1 ? 's' : ''} publiée${mesAnnonces.length > 1 ? 's' : ''}`;
 
   return (
     <YStack gap={24} paddingBottom={130}>
@@ -571,6 +579,43 @@ function EntraideTab() {
         </XStack>
       </GradientCard>
 
+      {/* Accès rapide : gérer mes prêts */}
+      <XStack
+        alignItems="center"
+        gap={14}
+        backgroundColor={colors.surface.card}
+        borderRadius={22}
+        padding={16}
+        onPress={() => router.push('/entraide-gestion')}
+        pressStyle={{ scale: 0.99 }}
+        role="button"
+        aria-label="Gérer mes prêts"
+      >
+        <View
+          width={44}
+          height={44}
+          borderRadius={22}
+          backgroundColor={enAttente > 0 ? colors.warningBg : colors.primary[50]}
+          alignItems="center"
+          justifyContent="center"
+        >
+          <ListChecks
+            size={20}
+            color={enAttente > 0 ? colors.warning : colors.primary[500]}
+            strokeWidth={1.8}
+          />
+        </View>
+        <YStack flex={1}>
+          <Text fontFamily="$heading" fontSize={15} fontWeight="700" color={colors.text.primary}>
+            Mes prêts
+          </Text>
+          <Text fontFamily="$body" fontSize={13} fontWeight="400" color={colors.text.muted}>
+            {gestionSubtitle}
+          </Text>
+        </YStack>
+        <ChevronRight size={16} color={colors.text.disabled} strokeWidth={2} />
+      </XStack>
+
       {/* Chips de filtre */}
       <XStack gap={8} flexWrap="wrap">
         {filterOptions.map((cat) => {
@@ -604,40 +649,7 @@ function EntraideTab() {
       {/* Cartes d'offres */}
       <YStack gap={12}>
         {filtered.map((offer) => (
-          <OfferCard key={offer.id} offer={offer} onDemander={() => demander(offer.id)} />
-        ))}
-      </YStack>
-
-      {/* Mes prêts */}
-      <YStack gap={4}>
-        <XStack alignItems="center" justifyContent="space-between">
-          <SectionLabel marginBottom={0}>Mes prêts</SectionLabel>
-          <Text
-            fontFamily="$body"
-            fontSize={13}
-            fontWeight="600"
-            color={colors.primary[500]}
-            onPress={() => router.push('/entraide-gestion')}
-            role="link"
-            aria-label="Tout gérer"
-          >
-            Tout gérer
-          </Text>
-        </XStack>
-        {mesDemandes.map((demande, index) => (
-          <YStack key={demande.id}>
-            {index > 0 && <RowSeparator />}
-            <ListRow aria-label={demande.offerTitre}>
-              <YStack flex={1}>
-                <Text fontFamily="$body" fontSize={15} fontWeight="600" color={colors.text.primary}>
-                  {demande.offerTitre}
-                </Text>
-                <Text fontFamily="$body" fontSize={13} fontWeight="400" color={colors.text.muted}>
-                  {demande.dateLabel}
-                </Text>
-              </YStack>
-            </ListRow>
-          </YStack>
+          <OfferCard key={offer.id} offer={offer} />
         ))}
       </YStack>
 

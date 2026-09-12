@@ -16,7 +16,7 @@ export default function EntraideDemandeScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { offers } = useEntraide();
+  const { offers, demander } = useEntraide();
   const offer = offers.find((o) => o.id === id) ?? offers[1];
   const prenom = offer.proprietaire.nom.split(' ')[0];
   const prisSlots = new Set(offer.dejaReserve.map((s) => s.dateLabel));
@@ -162,7 +162,14 @@ export default function EntraideDemandeScreen() {
         </ScrollView>
 
         <YStack paddingHorizontal={24} paddingTop={16} paddingBottom={16}>
-          <PillButton label="Envoyer la demande" disabled={!date} onPress={() => setStep(2)} />
+          <PillButton
+            label="Envoyer la demande"
+            disabled={!date}
+            onPress={() => {
+              demander(offer.id);
+              setStep(2);
+            }}
+          />
         </YStack>
       </SafeAreaView>
     </RNView>

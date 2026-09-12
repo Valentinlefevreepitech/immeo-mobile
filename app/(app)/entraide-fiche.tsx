@@ -203,8 +203,8 @@ export default function EntraideFicheScreen() {
 
           <YStack paddingHorizontal={24} paddingVertical={16}>
             <PillButton
-              label="Demander à emprunter"
-              disabled={emprunte}
+              label={offer.demandeEnvoyee ? 'Demande envoyée' : 'Demander à emprunter'}
+              disabled={emprunte || offer.demandeEnvoyee}
               onPress={() =>
                 router.push({ pathname: '/entraide-demande', params: { id: offer.id } })
               }
