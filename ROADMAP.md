@@ -65,12 +65,7 @@ Document de suivi du chantier de refonte (`PROMPT_CLAUDE_CODE.md`, 8 phases) et 
 Testé manuellement : reproduction du scénario du bug initial (Accueil → Entraide → Copro → Profil → Mon appart → Retour) donne maintenant bien Profil ; idem pour Entraide → Mes prêts → Retour (→ Entraide) et fiche → Demander → Retour (→ la fiche exacte, pas la racine Entraide).
 
 ### 2.5 Bug — double point orange en haut à droite (notifications)
-**Cause identifiée** (diagnostic fait, pas encore corrigé) : deux badges de l'app utilisent `position="absolute"` sur une `View` Tamagui **sans que le parent immédiat n'ait `position="relative"`** :
-- Le dot de notification sur la cloche (`app/(app)/index.tsx`, header, `PulsingDot` dans une `View position="absolute"`)
-- Le badge orange de l'action rapide "AG" (`app/(app)/index.tsx`, composant `QuickAction`, `badge &&  <View position="absolute" .../>`)
-
-Sur web, sans `position="relative"` explicite sur le parent, ces deux badges "s'échappent" vers le premier ancêtre positionné trouvé plus haut dans l'arbre — d'où leur apparition groupée dans le coin supérieur droit de l'écran, visible sur tous les écrans de l'app plutôt que sur la cloche et le bouton AG respectivement.
-**Fix attendu** : ajouter `position="relative"` aux deux `View` parentes concernées dans `app/(app)/index.tsx`. Correction courte (2 lignes) une fois qu'on s'y attaque.
+✅ **Corrigé** (12/09/2026). Cause confirmée : deux badges de `app/(app)/index.tsx` utilisaient `position="absolute"` sur une `View` Tamagui sans que le parent immédiat n'ait `position="relative"` — le dot de la cloche (header) et le badge de l'action rapide "AG" (`QuickAction`). Sans `position="relative"` explicite sur le parent, ces badges "s'échappaient" vers le premier ancêtre positionné trouvé plus haut dans l'arbre. Fix : ajout de `position="relative"` sur les deux `View` parentes concernées. Vérifié visuellement clair et sombre — chaque badge reste bien ancré sur sa propre icône.
 
 ### 2.7 Refonte de la navigation (proposition utilisateur, 12/09/2026)
 ✅ **Fait** (`d268627`) :

@@ -54,6 +54,7 @@ function QuickAction({
         backgroundColor={accent ? colors.primary[50] : colors.surface.card}
         alignItems="center"
         justifyContent="center"
+        position="relative"
         pressStyle={{ scale: 0.92 }}
       >
         {icon}
@@ -131,6 +132,7 @@ export default function AccueilScreen() {
                 backgroundColor={colors.surface.card}
                 alignItems="center"
                 justifyContent="center"
+                position="relative"
                 pressStyle={{ scale: 0.9 }}
                 onPress={() => router.push('/notifications')}
                 role="button"
