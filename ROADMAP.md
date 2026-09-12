@@ -49,9 +49,7 @@ Document de suivi du chantier de refonte (`PROMPT_CLAUDE_CODE.md`, 8 phases) et 
 - **Retour utilisateur (12/09/2026)** : le système actuel (syndic + gardien uniquement, `MessagesTab` dans `copro.tsx`) est à repenser en profondeur pour intégrer le P2P, potentiellement **fusionné avec Entraide** — voir 2.7.
 
 ### 2.1bis Annuaire des voisins
-- Actuellement le toggle "Annuaire des voisins" existe dans Profil > Consentements (`app/(app)/profil.tsx`) mais **aucun écran ne montre la liste des habitants** — le toggle contrôle une visibilité qui n'a nulle part où s'exercer.
-- À faire : un écran "Voisins" listant les résidents ayant opté pour la visibilité (nom, étage, éventuellement rôle gardien/syndic), probablement accessible depuis Copro ou Profil.
-- Lié à 2.2 : cet annuaire est probablement le point d'entrée naturel pour démarrer une conversation privée une fois la messagerie P2P en place.
+✅ **Fait** (12/09/2026). Le toggle "Annuaire des voisins" de Profil > Consentements était un `useState` purement local, jamais lu ailleurs. Extrait dans un petit store partagé `stores/consentsStore.ts` (`annuaireVisible`), lu par le nouvel écran `app/(app)/voisins.tsx` (accessible depuis une entrée "Annuaire des voisins" dans Profil > Compte). Résidents groupés par étage (gardien en tête), fixture `fixtures/voisins.ts` réutilisant le casting déjà établi ailleurs dans l'app (Sophie M., Karim B., Emma M., Michel Durand...). Si le toggle est désactivé, un bandeau explique à l'utilisateur qu'il n'apparaît pas dans l'annuaire et le renvoie vers Profil pour l'activer. Pas de bouton de contact pour l'instant (2.2, messagerie P2P, reste à faire).
 
 ### 2.3 Infos poubelles
 - Ajouter les informations de collecte des déchets (quels jours sortir quelles poubelles).

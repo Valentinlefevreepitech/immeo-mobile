@@ -3,10 +3,11 @@ import { Alert, ScrollView, View as RNView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronRight, KeyRound, LogOut, ShieldCheck, User } from 'lucide-react-native';
+import { ChevronRight, KeyRound, LogOut, ShieldCheck, User, Users } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useProfile } from '@/hooks/useProfile';
 import { useRoleStore, ROLE_LABELS } from '@/stores/roleStore';
+import { useConsentsStore } from '@/stores/consentsStore';
 import { MOCK_APARTMENT } from '@/fixtures/apartment';
 import { Avatar } from '@/components/ui/Avatar';
 import { Toggle } from '@/components/ui/Toggle';
@@ -26,12 +27,6 @@ const INITIAL_CONSENTS: Consent[] = [
     title: 'Notifications push',
     subtitle: 'Annonces, incidents, AG',
     value: true,
-  },
-  {
-    id: 'annuaire',
-    title: 'Annuaire des voisins',
-    subtitle: 'Nom visible par les résidents',
-    value: false,
   },
   {
     id: 'photos',
@@ -77,6 +72,8 @@ export default function ProfilScreen() {
   const { profile, handleLogout } = useProfile();
   const role = useRoleStore((s) => s.role);
   const toggleRole = useRoleStore((s) => s.toggleRole);
+  const annuaireVisible = useConsentsStore((s) => s.annuaireVisible);
+  const setAnnuaireVisible = useConsentsStore((s) => s.setAnnuaireVisible);
   const [consents, setConsents] = useState(INITIAL_CONSENTS);
 
   const setConsent = (id: string, value: boolean) => {
@@ -152,6 +149,12 @@ export default function ProfilScreen() {
                 />
                 <RowSeparator />
                 <AccountRow
+                  icon={<Users size={18} color={colors.text.primary} strokeWidth={1.8} />}
+                  label="Annuaire des voisins"
+                  onPress={() => router.push('/voisins')}
+                />
+                <RowSeparator />
+                <AccountRow
                   icon={<User size={18} color={colors.text.primary} strokeWidth={1.8} />}
                   label="Mes données personnelles"
                   onPress={() =>
@@ -189,36 +192,85 @@ export default function ProfilScreen() {
                   padding={20}
                   gap={16}
                 >
-                  {consents.map((consent, index) => (
-                    <YStack key={consent.id} gap={16}>
-                      {index > 0 && <View height={1} backgroundColor={colors.surface.empty} />}
-                      <XStack alignItems="center" gap={12}>
-                        <YStack flex={1}>
-                          <Text
-                            fontFamily="$body"
-                            fontSize={14}
-                            fontWeight="600"
-                            color={colors.text.primary}
-                          >
-                            {consent.title}
-                          </Text>
-                          <Text
-                            fontFamily="$body"
-                            fontSize={12}
-                            fontWeight="400"
-                            color={colors.text.muted}
-                          >
-                            {consent.subtitle}
-                          </Text>
-                        </YStack>
-                        <Toggle
-                          value={consent.value}
-                          onValueChange={(value) => setConsent(consent.id, value)}
-                          aria-label={consent.title}
-                        />
-                      </XStack>
+                  <XStack alignItems="center" gap={12}>
+                    <YStack flex={1}>
+                      <Text
+                        fontFamily="$body"
+                        fontSize={14}
+                        fontWeight="600"
+                        color={colors.text.primary}
+                      >
+                        {consents[0].title}
+                      </Text>
+                      <Text
+                        fontFamily="$body"
+                        fontSize={12}
+                        fontWeight="400"
+                        color={colors.text.muted}
+                      >
+                        {consents[0].subtitle}
+                      </Text>
                     </YStack>
-                  ))}
+                    <Toggle
+                      value={consents[0].value}
+                      onValueChange={(value) => setConsent(consents[0].id, value)}
+                      aria-label={consents[0].title}
+                    />
+                  </XStack>
+
+                  <View height={1} backgroundColor={colors.surface.empty} />
+                  <XStack alignItems="center" gap={12}>
+                    <YStack flex={1}>
+                      <Text
+                        fontFamily="$body"
+                        fontSize={14}
+                        fontWeight="600"
+                        color={colors.text.primary}
+                      >
+                        Annuaire des voisins
+                      </Text>
+                      <Text
+                        fontFamily="$body"
+                        fontSize={12}
+                        fontWeight="400"
+                        color={colors.text.muted}
+                      >
+                        Nom visible par les résidents
+                      </Text>
+                    </YStack>
+                    <Toggle
+                      value={annuaireVisible}
+                      onValueChange={setAnnuaireVisible}
+                      aria-label="Annuaire des voisins"
+                    />
+                  </XStack>
+
+                  <View height={1} backgroundColor={colors.surface.empty} />
+                  <XStack alignItems="center" gap={12}>
+                    <YStack flex={1}>
+                      <Text
+                        fontFamily="$body"
+                        fontSize={14}
+                        fontWeight="600"
+                        color={colors.text.primary}
+                      >
+                        {consents[1].title}
+                      </Text>
+                      <Text
+                        fontFamily="$body"
+                        fontSize={12}
+                        fontWeight="400"
+                        color={colors.text.muted}
+                      >
+                        {consents[1].subtitle}
+                      </Text>
+                    </YStack>
+                    <Toggle
+                      value={consents[1].value}
+                      onValueChange={(value) => setConsent(consents[1].id, value)}
+                      aria-label={consents[1].title}
+                    />
+                  </XStack>
                 </YStack>
                 <Text
                   fontFamily="$body"

@@ -22,7 +22,7 @@ const COPRO_GROUP = ['copro', 'sondage-detail'];
 // Routes secondaires rattachées à l'onglet Entraide (tab bar visible, Entraide actif)
 const ENTRAIDE_GROUP = ['entraide', 'entraide-fiche', 'entraide-demande', 'entraide-gestion'];
 // Routes secondaires rattachées à l'onglet Profil (tab bar visible, Profil actif)
-const PROFIL_GROUP = ['profil', 'appart'];
+const PROFIL_GROUP = ['profil', 'appart', 'voisins'];
 // Routes plein écran sans tab bar (flows de création)
 const HIDDEN_ROUTES = ['signaler', 'sondage-creer', 'entraide-annonce'];
 // Ordre de référence pour la direction du slide entre onglets (ordre visuel gauche→droite)
@@ -265,6 +265,7 @@ export default function AppLayout() {
       <Tabs.Screen name="copro" />
       <Tabs.Screen name="profil" />
       <Tabs.Screen name="appart" options={{ href: null }} />
+      <Tabs.Screen name="voisins" options={{ href: null }} />
       {/* Routes secondaires (hors onglets) */}
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="incidents" options={{ href: null }} />
