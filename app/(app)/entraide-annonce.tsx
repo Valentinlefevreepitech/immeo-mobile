@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useEntraide } from '@/hooks/useEntraide';
+import { useAuthStore } from '@/stores/authStore';
 import {
   ENTRAIDE_CATEGORIES,
   ENTRAIDE_DUREES,
@@ -21,6 +22,8 @@ export default function EntraideAnnonceScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const { publierAnnonce } = useEntraide();
+  const fullName = useAuthStore((s) => s.user?.fullName);
+  const initials = useAuthStore((s) => s.user?.initials);
 
   const [type, setType] = useState<EntraideType>('objet');
   const [photo, setPhoto] = useState<string | null>(null);
@@ -49,6 +52,9 @@ export default function EntraideAnnonceScreen() {
       categorie,
       duree,
       visibleImmeuble,
+      proprietaireNom: fullName || 'Vous',
+      proprietaireInitials: initials || undefined,
+      proprietaireEtage: '3ème',
     });
     router.replace('/(app)/copro');
   };

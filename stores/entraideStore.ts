@@ -18,7 +18,16 @@ export interface PublierAnnonceInput {
   categorie: EntraideCategorie;
   duree: string;
   visibleImmeuble: boolean;
+  proprietaireNom?: string;
+  proprietaireInitials?: string;
+  proprietaireEtage?: string;
 }
+
+const CATEGORIE_ICONS: Record<EntraideCategorie, EntraideOffer['icon']> = {
+  Bricolage: 'wrench',
+  Cuisine: 'utensils',
+  Services: 'hand-helping',
+};
 
 interface EntraideState {
   offers: EntraideOffer[];
@@ -65,11 +74,30 @@ export const useEntraideStore = create<EntraideState>((set, get) => ({
   },
 
   publierAnnonce: (input) => {
+    const id = `annonce-${Date.now()}`;
+    const nom = input.proprietaireNom ?? 'Vous';
+    const newOffer: EntraideOffer = {
+      id,
+      type: input.type,
+      titre: input.titre,
+      categorie: input.categorie,
+      icon: CATEGORIE_ICONS[input.categorie],
+      proprietaire: {
+        nom,
+        initials: input.proprietaireInitials ?? nom.slice(0, 2).toUpperCase(),
+        etage: input.proprietaireEtage ?? 'Vous',
+      },
+      condition: input.type === 'service' ? 'à organiser' : `prêt ${input.duree}`,
+      ctaLabel: input.type === 'service' ? 'Je participe' : 'Demander',
+      statut: 'disponible',
+      demandeEnvoyee: false,
+      description: `Proposé par ${nom}.`,
+      conditions: [`Durée : ${input.duree}`],
+      dejaReserve: [],
+    };
     set({
-      mesAnnonces: [
-        ...get().mesAnnonces,
-        { id: `annonce-${Date.now()}`, titre: input.titre, statut: 'en_ligne' },
-      ],
+      offers: [newOffer, ...get().offers],
+      mesAnnonces: [...get().mesAnnonces, { id, titre: input.titre, statut: 'en_ligne' }],
     });
   },
 }));

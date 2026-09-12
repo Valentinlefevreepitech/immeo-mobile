@@ -147,5 +147,9 @@ describe('useEntraide', () => {
     expect(result.current.mesAnnonces).toHaveLength(2);
     expect(result.current.mesAnnonces[1].titre).toBe('Nettoyeur haute pression');
     expect(result.current.mesAnnonces[1].statut).toBe('en_ligne');
+
+    expect(result.current.offers).toHaveLength(2);
+    expect(result.current.offers[0].titre).toBe('Nettoyeur haute pression');
+    expect(result.current.offers[0].statut).toBe('disponible');
   });
 });
