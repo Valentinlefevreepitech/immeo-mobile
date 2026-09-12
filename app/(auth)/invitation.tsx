@@ -11,7 +11,8 @@ import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Building2, Check, ChevronLeft, Mail } from 'lucide-react-native';
-import { colors } from '@/constants/colors';
+import Svg, { Defs, RadialGradient, Stop, Circle } from 'react-native-svg';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRoleStore, ROLE_LABELS } from '@/stores/roleStore';
 import { PillButton } from '@/components/ui/PillButton';
 import { Toggle } from '@/components/ui/Toggle';
@@ -29,23 +30,54 @@ function getPasswordStrength(password: string) {
   return { checks, score };
 }
 
+/** Orbe décorative teal, dégradé radial, respiration lente (scale + opacité). */
+function DecorativeOrb({ color }: { color: string }) {
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, { toValue: 1, duration: 2400, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0, duration: 2400, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [anim]);
+
+  return (
+    <Animated.View
+      style={{
+        position: 'absolute',
+        top: -80,
+        right: -100,
+        width: 340,
+        height: 340,
+        opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0.14, 0.24] }),
+        transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] }) }],
+      }}
+    >
+      <Svg width={340} height={340}>
+        <Defs>
+          <RadialGradient id="orb" cx="50%" cy="50%" r="50%">
+            <Stop offset="0%" stopColor={color} stopOpacity={1} />
+            <Stop offset="100%" stopColor={color} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={170} cy={170} r={170} fill="url(#orb)" />
+      </Svg>
+    </Animated.View>
+  );
+}
+
 /** Étape 1 : invitation reçue du syndic. */
 function StepInvitation({ onActivate }: { onActivate: () => void }) {
+  const colors = useThemeColors();
   const role = useRoleStore((s) => s.role);
 
   return (
     <YStack flex={1}>
-      {/* Orbe décorative teal */}
-      <View
-        position="absolute"
-        top={-80}
-        right={-100}
-        width={340}
-        height={340}
-        borderRadius={170}
-        backgroundColor={colors.primary[300]}
-        opacity={0.18}
-      />
+      <DecorativeOrb color={colors.primary[300]} />
       <YStack flex={1} justifyContent="center" paddingHorizontal={32} gap={14}>
         <View
           width={64}
@@ -127,6 +159,7 @@ function StepInvitation({ onActivate }: { onActivate: () => void }) {
 
 /** Étape 2 : création du mot de passe + consentements RGPD. */
 function StepPassword({ onBack, onContinue }: { onBack: () => void; onContinue: () => void }) {
+  const colors = useThemeColors();
   const [password, setPassword] = useState('');
   const [notifConsent, setNotifConsent] = useState(true);
   const [annuaireConsent, setAnnuaireConsent] = useState(false);
@@ -308,6 +341,7 @@ function StepPassword({ onBack, onContinue }: { onBack: () => void; onContinue: 
 
 /** Étape 3 : compte activé. */
 function StepConfirmation({ onDiscover }: { onDiscover: () => void }) {
+  const colors = useThemeColors();
   const pop = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -368,6 +402,7 @@ function StepConfirmation({ onDiscover }: { onDiscover: () => void }) {
 
 export default function InvitationScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   return (
