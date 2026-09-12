@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Tabs } from 'expo-router';
 import { View, Pressable, StyleSheet, Animated, Easing } from 'react-native';
-import { MessageCircle, KeyRound, User } from 'lucide-react-native';
+import { HandHelping, Megaphone, User } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -18,17 +18,15 @@ const ACTIVE_BORDER = colors.primary[200];
 // Routes secondaires rattachées à l'onglet Accueil (tab bar visible, Accueil actif)
 const ACCUEIL_GROUP = ['index', 'notifications', 'incidents', 'incident-detail', 'ag', 'documents'];
 // Routes secondaires rattachées à l'onglet Copro (tab bar visible, Copro actif)
-const COPRO_GROUP = [
-  'copro',
-  'sondage-detail',
-  'entraide-fiche',
-  'entraide-demande',
-  'entraide-gestion',
-];
+const COPRO_GROUP = ['copro', 'sondage-detail'];
+// Routes secondaires rattachées à l'onglet Entraide (tab bar visible, Entraide actif)
+const ENTRAIDE_GROUP = ['entraide', 'entraide-fiche', 'entraide-demande', 'entraide-gestion'];
+// Routes secondaires rattachées à l'onglet Profil (tab bar visible, Profil actif)
+const PROFIL_GROUP = ['profil', 'appart'];
 // Routes plein écran sans tab bar (flows de création)
 const HIDDEN_ROUTES = ['signaler', 'sondage-creer', 'entraide-annonce'];
-// Ordre de référence pour la direction du slide entre onglets (spec §3)
-const TAB_ORDER: Record<string, number> = { index: 0, copro: 1, profil: 2, appart: 3 };
+// Ordre de référence pour la direction du slide entre onglets (ordre visuel gauche→droite)
+const TAB_ORDER: Record<string, number> = { index: 0, entraide: 1, profil: 2, copro: 3 };
 
 function HomeFilledIcon({ size = 20, color = '#000' }: { size?: number; color?: string }) {
   return (
@@ -46,11 +44,13 @@ function TabPill({
   label,
   active,
   onPress,
+  hasUnread,
   children,
 }: {
   label: string;
   active: boolean;
   onPress: () => void;
+  hasUnread?: boolean;
   children: React.ReactNode;
 }) {
   const anim = useRef(new Animated.Value(active ? 1 : 0)).current;
@@ -88,7 +88,14 @@ function TabPill({
             }),
           }}
         >
-          {children}
+          <View style={styles.pillIconWrap}>
+            {children}
+            {hasUnread && (
+              <View style={styles.pillUnreadDot}>
+                <PulsingDot color={ACTIVE_FG} size={7} pulse />
+              </View>
+            )}
+          </View>
           <Animated.View
             style={{
               overflow: 'hidden',
@@ -110,125 +117,8 @@ function TabPill({
 }
 
 /**
- * Onglet « Mon appart » de la pilule : même expansion/révélation de label
- * que `TabPill`, mais l'icône clé wiggle au repos (toutes les 6s) et tourne
- * de -90° (comme dans une serrure) avant que la navigation ne s'effectue —
- * la page s'ouvre ensuite en "porte" (voir `DoorTransition`, appart.tsx).
- */
-function AppartTabItem({ active, onNavigate }: { active: boolean; onNavigate: () => void }) {
-  const expand = useRef(new Animated.Value(active ? 1 : 0)).current;
-  const rot = useRef(new Animated.Value(0)).current;
-  const wiggle = useRef(new Animated.Value(0)).current;
-  const wiggleLoop = useRef<Animated.CompositeAnimation | null>(null);
-  const unlocking = useRef(false);
-
-  useEffect(() => {
-    Animated.timing(expand, {
-      toValue: active ? 1 : 0,
-      duration: 350,
-      easing: Easing.bezier(0.22, 1, 0.36, 1),
-      useNativeDriver: false,
-    }).start();
-  }, [active, expand]);
-
-  useEffect(() => {
-    if (active) {
-      wiggleLoop.current?.stop();
-      wiggle.setValue(0);
-      Animated.timing(rot, { toValue: -90, duration: 250, useNativeDriver: true }).start();
-      return;
-    }
-
-    unlocking.current = false;
-    Animated.timing(rot, { toValue: 0, duration: 250, useNativeDriver: true }).start();
-    wiggleLoop.current = Animated.loop(
-      Animated.sequence([
-        Animated.delay(6000),
-        Animated.timing(wiggle, { toValue: -16, duration: 160, useNativeDriver: true }),
-        Animated.timing(wiggle, { toValue: 12, duration: 160, useNativeDriver: true }),
-        Animated.timing(wiggle, { toValue: -6, duration: 130, useNativeDriver: true }),
-        Animated.timing(wiggle, { toValue: 3, duration: 110, useNativeDriver: true }),
-        Animated.timing(wiggle, { toValue: 0, duration: 110, useNativeDriver: true }),
-      ]),
-    );
-    wiggleLoop.current.start();
-    return () => wiggleLoop.current?.stop();
-  }, [active, rot, wiggle]);
-
-  const handlePress = () => {
-    if (active || unlocking.current) return;
-    unlocking.current = true;
-    wiggleLoop.current?.stop();
-    wiggle.setValue(0);
-    Animated.timing(rot, {
-      toValue: -90,
-      duration: 620,
-      easing: Easing.bezier(0.45, 0, 0.25, 1),
-      useNativeDriver: true,
-    }).start((result) => {
-      if (result.finished) {
-        onNavigate();
-      } else {
-        unlocking.current = false;
-      }
-    });
-  };
-
-  const rotation = Animated.add(rot, wiggle).interpolate({
-    inputRange: [-90, 0],
-    outputRange: ['-90deg', '0deg'],
-  });
-
-  return (
-    <Animated.View
-      style={{ flex: expand.interpolate({ inputRange: [0, 1], outputRange: [1, 1.7] }) }}
-    >
-      <Pressable onPress={handlePress} role="tab" aria-label="Mon appart" aria-selected={active}>
-        <Animated.View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 7,
-            paddingVertical: 11,
-            borderRadius: 999,
-            borderWidth: 1.5,
-            borderColor: expand.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['rgba(153,217,206,0)', ACTIVE_BORDER],
-            }),
-            backgroundColor: expand.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['rgba(230,245,242,0)', ACTIVE_BG],
-            }),
-          }}
-        >
-          <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-            <KeyRound size={20} color={active ? ACTIVE_FG : IDLE_FG} strokeWidth={2} />
-          </Animated.View>
-          <Animated.View
-            style={{
-              overflow: 'hidden',
-              maxWidth: expand.interpolate({ inputRange: [0, 1], outputRange: [0, 70] }),
-              opacity: expand,
-            }}
-          >
-            <Animated.Text
-              numberOfLines={1}
-              style={{ fontFamily: 'InterBold', fontSize: 12, color: ACTIVE_FG }}
-            >
-              Mon appart
-            </Animated.Text>
-          </Animated.View>
-        </Animated.View>
-      </Pressable>
-    </Animated.View>
-  );
-}
-
-/**
- * Bouton rond isolé (Copro) : simple pression `scale(0.94–0.97)`, avec un
- * dot teal pulsé quand il y a des messages non lus.
+ * Bouton rond isolé (Copro, annonces officielles + sondages) : simple
+ * pression `scale(0.94–0.97)`.
  */
 function IsolatedTabButton({
   active,
@@ -290,7 +180,11 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     ? 'index'
     : COPRO_GROUP.includes(focusedRoute)
       ? 'copro'
-      : focusedRoute;
+      : ENTRAIDE_GROUP.includes(focusedRoute)
+        ? 'entraide'
+        : PROFIL_GROUP.includes(focusedRoute)
+          ? 'profil'
+          : focusedRoute;
 
   const navigate = (name: string) => {
     const fromIndex = TAB_ORDER[activeTab] ?? 0;
@@ -319,12 +213,23 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
       />
 
       <View style={styles.row} pointerEvents="box-none">
-        {/* Pilule flottante : Accueil · Mon appart · Profil */}
+        {/* Pilule flottante : Accueil · Entraide · Profil */}
         <View style={styles.pill}>
           <TabPill label="Accueil" active={activeTab === 'index'} onPress={() => navigate('index')}>
             <HomeFilledIcon size={20} color={activeTab === 'index' ? ACTIVE_FG : IDLE_FG} />
           </TabPill>
-          <AppartTabItem active={activeTab === 'appart'} onNavigate={() => navigate('appart')} />
+          <TabPill
+            label="Entraide"
+            active={activeTab === 'entraide'}
+            hasUnread={hasUnread}
+            onPress={() => navigate('entraide')}
+          >
+            <HandHelping
+              size={20}
+              color={activeTab === 'entraide' ? ACTIVE_FG : IDLE_FG}
+              strokeWidth={2}
+            />
+          </TabPill>
           <TabPill
             label="Profil"
             active={activeTab === 'profil'}
@@ -334,14 +239,13 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           </TabPill>
         </View>
 
-        {/* Bouton rond isolé « message » = Copro */}
+        {/* Bouton rond isolé « annonces officielles » = Copro */}
         <IsolatedTabButton
           active={activeTab === 'copro'}
           label="Copro"
           icon={({ size, color, strokeWidth }) => (
-            <MessageCircle size={size} color={color} strokeWidth={strokeWidth} />
+            <Megaphone size={size} color={color} strokeWidth={strokeWidth} />
           )}
-          hasUnread={hasUnread}
           onPress={() => navigate('copro')}
         />
       </View>
@@ -357,9 +261,10 @@ export default function AppLayout() {
       detachInactiveScreens={false}
     >
       <Tabs.Screen name="index" />
+      <Tabs.Screen name="entraide" />
       <Tabs.Screen name="copro" />
       <Tabs.Screen name="profil" />
-      <Tabs.Screen name="appart" />
+      <Tabs.Screen name="appart" options={{ href: null }} />
       {/* Routes secondaires (hors onglets) */}
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="incidents" options={{ href: null }} />
@@ -434,5 +339,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     right: 12,
+  },
+  pillIconWrap: {
+    position: 'relative',
+  },
+  pillUnreadDot: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
   },
 });

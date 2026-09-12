@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Alert, ScrollView, View as RNView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronRight, LogOut, ShieldCheck, User } from 'lucide-react-native';
+import { ChevronRight, KeyRound, LogOut, ShieldCheck, User } from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useProfile } from '@/hooks/useProfile';
 import { useRoleStore, ROLE_LABELS } from '@/stores/roleStore';
@@ -71,6 +72,7 @@ function AccountRow({
 }
 
 export default function ProfilScreen() {
+  const router = useRouter();
   const colors = useThemeColors();
   const { profile, handleLogout } = useProfile();
   const role = useRoleStore((s) => s.role);
@@ -143,6 +145,12 @@ export default function ProfilScreen() {
                 >
                   Compte
                 </Text>
+                <AccountRow
+                  icon={<KeyRound size={18} color={colors.text.primary} strokeWidth={1.8} />}
+                  label="Mon appart"
+                  onPress={() => router.push('/appart')}
+                />
+                <RowSeparator />
                 <AccountRow
                   icon={<User size={18} color={colors.text.primary} strokeWidth={1.8} />}
                   label="Mes données personnelles"

@@ -8,7 +8,8 @@ import { useRoleStore } from '@/stores/roleStore';
 import { MOCK_FINANCES, MOCK_LOGEMENT } from '@/fixtures/apartment';
 import { ListRow, RowSeparator } from '@/components/ui/ListRow';
 import { PulsingDot } from '@/components/ui/PulsingDot';
-import { DoorTransition } from '@/components/ui/DoorTransition';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { PageTransition } from '@/components/ui/PageTransition';
 
 export default function AppartScreen() {
   const router = useRouter();
@@ -18,23 +19,14 @@ export default function AppartScreen() {
 
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>
-      <DoorTransition>
+      <PageTransition>
         <SafeAreaView edges={['top']} style={{ flex: 1 }}>
           <ScrollView
             contentContainerStyle={{ paddingBottom: 130 }}
             showsVerticalScrollIndicator={false}
           >
-            <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={8}>
-              <Text
-                fontFamily="$heading"
-                fontSize={32}
-                fontWeight="800"
-                letterSpacing={-0.8}
-                color={colors.text.primary}
-                role="heading"
-              >
-                Mon appart
-              </Text>
+            <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={16}>
+              <ScreenHeader title="Mon appart" onBack={() => router.back()} />
             </YStack>
 
             <YStack paddingHorizontal={24} gap={26}>
@@ -230,7 +222,7 @@ export default function AppartScreen() {
             </YStack>
           </ScrollView>
         </SafeAreaView>
-      </DoorTransition>
+      </PageTransition>
     </RNView>
   );
 }
