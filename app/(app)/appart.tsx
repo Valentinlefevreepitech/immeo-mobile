@@ -1,6 +1,5 @@
-import { useCallback, useRef } from 'react';
-import { Animated, Easing, ScrollView, View as RNView, useWindowDimensions } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { ScrollView, View as RNView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, Clock, FileText } from 'lucide-react-native';
@@ -9,44 +8,7 @@ import { useRoleStore } from '@/stores/roleStore';
 import { MOCK_FINANCES, MOCK_LOGEMENT } from '@/fixtures/apartment';
 import { ListRow, RowSeparator } from '@/components/ui/ListRow';
 import { PulsingDot } from '@/components/ui/PulsingDot';
-
-/**
- * Entrée « porte qui s'ouvre » du prototype : rotateY -58° → 0,
- * pivot sur le bord gauche, rejouée à chaque focus (après le tour de clé).
- */
-function DoorTransition({ children }: { children: React.ReactNode }) {
-  const anim = useRef(new Animated.Value(1)).current;
-  const { width } = useWindowDimensions();
-
-  useFocusEffect(
-    useCallback(() => {
-      anim.setValue(0);
-      Animated.timing(anim, {
-        toValue: 1,
-        duration: 650,
-        easing: Easing.bezier(0.22, 1, 0.36, 1),
-        useNativeDriver: true,
-      }).start();
-    }, [anim]),
-  );
-
-  return (
-    <Animated.View
-      style={{
-        flex: 1,
-        opacity: anim.interpolate({ inputRange: [0, 0.55, 1], outputRange: [0, 1, 1] }),
-        transform: [
-          { perspective: 1400 },
-          { translateX: -width / 2 },
-          { rotateY: anim.interpolate({ inputRange: [0, 1], outputRange: ['-58deg', '0deg'] }) },
-          { translateX: width / 2 },
-        ],
-      }}
-    >
-      {children}
-    </Animated.View>
-  );
-}
+import { DoorTransition } from '@/components/ui/DoorTransition';
 
 export default function AppartScreen() {
   const router = useRouter();

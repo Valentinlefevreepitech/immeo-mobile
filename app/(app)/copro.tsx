@@ -10,7 +10,7 @@ import { GradientCard } from '@/components/ui/GradientCard';
 import { SectionLabel } from '@/components/ui/SectionLabel';
 import { ListRow, RowSeparator } from '@/components/ui/ListRow';
 import { PulsingDot } from '@/components/ui/PulsingDot';
-import { PageTransition } from '@/components/ui/PageTransition';
+import { TabSlideTransition } from '@/components/ui/TabSlideTransition';
 
 type CoproTab = 'annonces' | 'messages';
 
@@ -263,7 +263,7 @@ export default function CoproScreen() {
 
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>
-      <PageTransition>
+      <TabSlideTransition>
         <SafeAreaView edges={['top']} style={{ flex: 1 }}>
           <ScrollView
             contentContainerStyle={{ paddingBottom: 0 }}
@@ -288,7 +288,7 @@ export default function CoproScreen() {
             </YStack>
           </ScrollView>
         </SafeAreaView>
-      </PageTransition>
+      </TabSlideTransition>
     </RNView>
   );
 }

@@ -10,7 +10,7 @@ import { MOCK_APARTMENT } from '@/fixtures/apartment';
 import { Avatar } from '@/components/ui/Avatar';
 import { Toggle } from '@/components/ui/Toggle';
 import { ListRow, RowSeparator } from '@/components/ui/ListRow';
-import { PageTransition } from '@/components/ui/PageTransition';
+import { TabSlideTransition } from '@/components/ui/TabSlideTransition';
 
 interface Consent {
   id: string;
@@ -81,7 +81,7 @@ export default function ProfilScreen() {
 
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>
-      <PageTransition>
+      <TabSlideTransition>
         <SafeAreaView edges={['top']} style={{ flex: 1 }}>
           <ScrollView
             contentContainerStyle={{ paddingBottom: 130 }}
@@ -273,7 +273,7 @@ export default function ProfilScreen() {
             </YStack>
           </ScrollView>
         </SafeAreaView>
-      </PageTransition>
+      </TabSlideTransition>
     </RNView>
   );
 }

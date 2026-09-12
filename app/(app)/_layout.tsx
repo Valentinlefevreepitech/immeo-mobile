@@ -6,6 +6,9 @@ import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { colors } from '@/constants/colors';
+import { useCopro } from '@/hooks/useCopro';
+import { useNavTransitionStore } from '@/stores/navTransitionStore';
+import { PulsingDot } from '@/components/ui/PulsingDot';
 
 const ACTIVE_FG = colors.primary[500];
 const IDLE_FG = colors.text.muted;
@@ -16,6 +19,8 @@ const ACTIVE_BORDER = colors.primary[200];
 const ACCUEIL_GROUP = ['index', 'notifications', 'incidents', 'incident-detail', 'ag', 'documents'];
 // Routes plein écran sans tab bar (flow signalement)
 const HIDDEN_ROUTES = ['signaler'];
+// Ordre de référence pour la direction du slide entre onglets (spec §3)
+const TAB_ORDER: Record<string, number> = { index: 0, copro: 1, profil: 2, appart: 3 };
 
 function HomeFilledIcon({ size = 20, color = '#000' }: { size?: number; color?: string }) {
   return (
@@ -97,15 +102,26 @@ function TabPill({
 }
 
 /**
- * Bouton rond isolé « clé » = Mon appart.
- * Au repos la clé wiggle toutes les 6s ; au tap elle tourne de -90°
- * (comme dans une serrure) puis la navigation s'effectue.
+ * Onglet « Mon appart » de la pilule : même expansion/révélation de label
+ * que `TabPill`, mais l'icône clé wiggle au repos (toutes les 6s) et tourne
+ * de -90° (comme dans une serrure) avant que la navigation ne s'effectue —
+ * la page s'ouvre ensuite en "porte" (voir `DoorTransition`, appart.tsx).
  */
-function KeyButton({ active, onActivate }: { active: boolean; onActivate: () => void }) {
+function AppartTabItem({ active, onNavigate }: { active: boolean; onNavigate: () => void }) {
+  const expand = useRef(new Animated.Value(active ? 1 : 0)).current;
   const rot = useRef(new Animated.Value(0)).current;
   const wiggle = useRef(new Animated.Value(0)).current;
   const wiggleLoop = useRef<Animated.CompositeAnimation | null>(null);
   const unlocking = useRef(false);
+
+  useEffect(() => {
+    Animated.timing(expand, {
+      toValue: active ? 1 : 0,
+      duration: 350,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+      useNativeDriver: false,
+    }).start();
+  }, [active, expand]);
 
   useEffect(() => {
     if (active) {
@@ -141,8 +157,12 @@ function KeyButton({ active, onActivate }: { active: boolean; onActivate: () => 
       duration: 620,
       easing: Easing.bezier(0.45, 0, 0.25, 1),
       useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) onActivate();
+    }).start((result) => {
+      if (result.finished) {
+        onNavigate();
+      } else {
+        unlocking.current = false;
+      }
     });
   };
 
@@ -152,28 +172,119 @@ function KeyButton({ active, onActivate }: { active: boolean; onActivate: () => 
   });
 
   return (
-    <Pressable onPress={handlePress} role="tab" aria-label="Mon appart" aria-selected={active}>
-      <View
+    <Animated.View
+      style={{ flex: expand.interpolate({ inputRange: [0, 1], outputRange: [1, 1.7] }) }}
+    >
+      <Pressable onPress={handlePress} role="tab" aria-label="Mon appart" aria-selected={active}>
+        <Animated.View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 7,
+            paddingVertical: 11,
+            borderRadius: 999,
+            borderWidth: 1.5,
+            borderColor: expand.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['rgba(153,217,206,0)', ACTIVE_BORDER],
+            }),
+            backgroundColor: expand.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['rgba(230,245,242,0)', ACTIVE_BG],
+            }),
+          }}
+        >
+          <Animated.View style={{ transform: [{ rotate: rotation }] }}>
+            <KeyRound size={20} color={active ? ACTIVE_FG : IDLE_FG} strokeWidth={2} />
+          </Animated.View>
+          <Animated.View
+            style={{
+              overflow: 'hidden',
+              maxWidth: expand.interpolate({ inputRange: [0, 1], outputRange: [0, 70] }),
+              opacity: expand,
+            }}
+          >
+            <Animated.Text
+              numberOfLines={1}
+              style={{ fontFamily: 'InterBold', fontSize: 12, color: ACTIVE_FG }}
+            >
+              Mon appart
+            </Animated.Text>
+          </Animated.View>
+        </Animated.View>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+/**
+ * Bouton rond isolé (Copro) : simple pression `scale(0.94–0.97)`, avec un
+ * dot teal pulsé quand il y a des messages non lus.
+ */
+function IsolatedTabButton({
+  active,
+  label,
+  icon,
+  hasUnread,
+  onPress,
+}: {
+  active: boolean;
+  label: string;
+  icon: (props: { size: number; color: string; strokeWidth: number }) => React.ReactNode;
+  hasUnread?: boolean;
+  onPress: () => void;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.timing(scale, { toValue: 0.94, duration: 100, useNativeDriver: true }).start();
+  };
+  const handlePressOut = () => {
+    Animated.timing(scale, { toValue: 1, duration: 150, useNativeDriver: true }).start();
+  };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      role="tab"
+      aria-label={label}
+      aria-selected={active}
+    >
+      <Animated.View
         style={[
           styles.keyCircle,
+          { transform: [{ scale }] },
           active && { backgroundColor: ACTIVE_BG, borderColor: ACTIVE_BORDER },
         ]}
       >
-        <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-          <KeyRound size={23} color={active ? ACTIVE_FG : IDLE_FG} strokeWidth={2} />
-        </Animated.View>
-      </View>
+        {icon({ size: 23, color: active ? ACTIVE_FG : IDLE_FG, strokeWidth: 2 })}
+        {hasUnread && (
+          <View style={styles.unreadDot}>
+            <PulsingDot color={ACTIVE_FG} size={9} pulse />
+          </View>
+        )}
+      </Animated.View>
     </Pressable>
   );
 }
 
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
+  const { conversations } = useCopro();
+  const hasUnread = conversations.some((c) => c.unread);
+
   const focusedRoute = state.routes[state.index]?.name;
   if (HIDDEN_ROUTES.includes(focusedRoute)) return null;
 
   const activeTab = ACCUEIL_GROUP.includes(focusedRoute) ? 'index' : focusedRoute;
 
   const navigate = (name: string) => {
+    const fromIndex = TAB_ORDER[activeTab] ?? 0;
+    const toIndex = TAB_ORDER[name] ?? 0;
+    useNavTransitionStore.getState().setDirection(toIndex >= fromIndex ? 'right' : 'left');
+
     const route = state.routes.find((r) => r.name === name);
     const event = navigation.emit({
       type: 'tabPress',
@@ -196,18 +307,12 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
       />
 
       <View style={styles.row} pointerEvents="box-none">
-        {/* Pilule flottante : Accueil · Copro · Profil */}
+        {/* Pilule flottante : Accueil · Mon appart · Profil */}
         <View style={styles.pill}>
           <TabPill label="Accueil" active={activeTab === 'index'} onPress={() => navigate('index')}>
             <HomeFilledIcon size={20} color={activeTab === 'index' ? ACTIVE_FG : IDLE_FG} />
           </TabPill>
-          <TabPill label="Copro" active={activeTab === 'copro'} onPress={() => navigate('copro')}>
-            <MessageCircle
-              size={20}
-              color={activeTab === 'copro' ? ACTIVE_FG : IDLE_FG}
-              strokeWidth={2}
-            />
-          </TabPill>
+          <AppartTabItem active={activeTab === 'appart'} onNavigate={() => navigate('appart')} />
           <TabPill
             label="Profil"
             active={activeTab === 'profil'}
@@ -217,8 +322,16 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           </TabPill>
         </View>
 
-        {/* Bouton rond isolé « clé » = Mon appart */}
-        <KeyButton active={activeTab === 'appart'} onActivate={() => navigate('appart')} />
+        {/* Bouton rond isolé « message » = Copro */}
+        <IsolatedTabButton
+          active={activeTab === 'copro'}
+          label="Copro"
+          icon={({ size, color, strokeWidth }) => (
+            <MessageCircle size={size} color={color} strokeWidth={strokeWidth} />
+          )}
+          hasUnread={hasUnread}
+          onPress={() => navigate('copro')}
+        />
       </View>
     </View>
   );
@@ -298,5 +411,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.14,
     shadowRadius: 28,
     elevation: 10,
+  },
+  unreadDot: {
+    position: 'absolute',
+    top: 10,
+    right: 12,
   },
 });

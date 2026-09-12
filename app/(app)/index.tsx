@@ -21,7 +21,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { GradientCard } from '@/components/ui/GradientCard';
 import { ListRow, RowSeparator } from '@/components/ui/ListRow';
 import { PulsingDot } from '@/components/ui/PulsingDot';
-import { PageTransition } from '@/components/ui/PageTransition';
+import { TabSlideTransition } from '@/components/ui/TabSlideTransition';
 
 function QuickAction({
   icon,
@@ -93,7 +93,7 @@ export default function AccueilScreen() {
 
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>
-      <PageTransition>
+      <TabSlideTransition>
         <SafeAreaView edges={['top']} style={{ flex: 1 }}>
           <ScrollView
             contentContainerStyle={{ paddingBottom: 130 }}
@@ -340,7 +340,7 @@ export default function AccueilScreen() {
             </YStack>
           </ScrollView>
         </SafeAreaView>
-      </PageTransition>
+      </TabSlideTransition>
     </RNView>
   );
 }

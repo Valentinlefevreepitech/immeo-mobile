@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react';
-import { Appearance } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TamaguiProvider } from 'tamagui';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -13,7 +11,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { useAppReady } from '@/hooks/useAppReady';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useThemeStore } from '@/stores/themeStore';
+import { useResolvedTheme } from '@/hooks/useResolvedTheme';
 import config from '../tamagui.config';
 
 SplashScreen.preventAutoHideAsync();
@@ -26,23 +24,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 function NotificationSetup() {
   useNotifications();
   return null;
-}
-
-function useResolvedTheme(): 'light' | 'dark' {
-  const mode = useThemeStore((s) => s.mode);
-  const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
-  const [systemScheme, setSystemScheme] = useState(Appearance.getColorScheme() ?? 'light');
-
-  useEffect(() => {
-    if (mode !== 'system') return;
-    const sub = Appearance.addChangeListener(({ colorScheme }) => {
-      setSystemScheme(colorScheme ?? 'light');
-    });
-    return () => sub.remove();
-  }, [mode]);
-
-  if (mode === 'system') return systemScheme as 'light' | 'dark';
-  return resolvedTheme();
 }
 
 const persistOptions = {

@@ -6,3 +6,5 @@ export { useCopro } from './useCopro';
 export { useIncidents } from './useIncidents';
 export { useProfile } from './useProfile';
 export { useNotifications } from './useNotifications';
+export { useResolvedTheme } from './useResolvedTheme';
+export { useThemeColors } from './useThemeColors';

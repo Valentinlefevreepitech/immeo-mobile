@@ -74,3 +74,83 @@ export const colors = {
   card: '#F5F6F8',
   border: '#F0F2F1',
 } as const;
+
+/**
+ * Variante sombre de `colors`, alignee sur les themes `light`/`dark` de
+ * `tamagui.config.ts` (memes tons teal inverses). Pas encore consommee par
+ * les ecrans (qui importent `colors` en dur) : voir `hooks/useThemeColors.ts`
+ * pour la migration progressive ecran par ecran.
+ */
+export const colorsDark = {
+  primary: {
+    50: '#043D35',
+    100: '#064F44',
+    200: '#085D50',
+    300: '#096B5C',
+    400: '#0A7968',
+    500: '#4DBDAB',
+    600: '#6ECABB',
+    700: '#99D9CE',
+    800: '#C2E8E1',
+    900: '#E6F5F2',
+  },
+  secondary: {
+    50: '#101B2A',
+    100: '#16233A',
+    200: '#1E2E48',
+    300: '#233D5E',
+    400: '#2C4870',
+    500: '#355172',
+    600: '#466586',
+    700: '#587A9A',
+    800: '#6A8EAE',
+    900: '#84A4C0',
+  },
+  gray: {
+    50: '#0F172A',
+    100: '#1E293B',
+    200: '#334155',
+    300: '#475569',
+    400: '#64748B',
+    500: '#94A3B8',
+    600: '#CBD5E1',
+    700: '#E2E8F0',
+    800: '#F1F5F9',
+    900: '#F8FAFC',
+  },
+  text: {
+    primary: '#F1F5F9',
+    secondary: '#CBD5E1',
+    muted: '#64748B',
+    disabled: '#475569',
+  },
+  surface: {
+    page: '#0F172A',
+    card: '#1E293B',
+    separator: '#2D3748',
+    empty: '#334155',
+  },
+  gradient: {
+    hero: ['#064F44', '#043D35'] as const,
+    avatar: ['#0A7968', '#4DBDAB'] as const,
+  },
+  success: '#22C55E',
+  successDark: '#4ADE80',
+  successBg: '#0F2A1A',
+  successText: '#4ADE80',
+  warning: '#F97316',
+  warningBg: '#3A2410',
+  warningBanner: '#4A2E0F',
+  warningText: '#FDBA74',
+  danger: '#EF4444',
+  dangerBg: '#3A1414',
+  dangerText: '#FCA5A5',
+  info: '#3B82F6',
+  infoBg: '#152238',
+  infoText: '#93C5FD',
+  white: '#FFFFFF',
+  black: '#111111',
+  background: '#0F172A',
+  card: '#1E293B',
+  border: '#2D3748',
+} as const;
