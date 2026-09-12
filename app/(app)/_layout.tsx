@@ -18,9 +18,15 @@ const ACTIVE_BORDER = colors.primary[200];
 // Routes secondaires rattachées à l'onglet Accueil (tab bar visible, Accueil actif)
 const ACCUEIL_GROUP = ['index', 'notifications', 'incidents', 'incident-detail', 'ag', 'documents'];
 // Routes secondaires rattachées à l'onglet Copro (tab bar visible, Copro actif)
-const COPRO_GROUP = ['copro', 'sondage-detail'];
+const COPRO_GROUP = [
+  'copro',
+  'sondage-detail',
+  'entraide-fiche',
+  'entraide-demande',
+  'entraide-gestion',
+];
 // Routes plein écran sans tab bar (flows de création)
-const HIDDEN_ROUTES = ['signaler', 'sondage-creer'];
+const HIDDEN_ROUTES = ['signaler', 'sondage-creer', 'entraide-annonce'];
 // Ordre de référence pour la direction du slide entre onglets (spec §3)
 const TAB_ORDER: Record<string, number> = { index: 0, copro: 1, profil: 2, appart: 3 };
 
@@ -363,6 +369,10 @@ export default function AppLayout() {
       <Tabs.Screen name="documents" options={{ href: null }} />
       <Tabs.Screen name="sondage-detail" options={{ href: null }} />
       <Tabs.Screen name="sondage-creer" options={{ href: null }} />
+      <Tabs.Screen name="entraide-fiche" options={{ href: null }} />
+      <Tabs.Screen name="entraide-demande" options={{ href: null }} />
+      <Tabs.Screen name="entraide-gestion" options={{ href: null }} />
+      <Tabs.Screen name="entraide-annonce" options={{ href: null }} />
     </Tabs>
   );
 }

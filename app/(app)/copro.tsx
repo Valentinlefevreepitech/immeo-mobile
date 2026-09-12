@@ -3,18 +3,39 @@ import { Alert, Animated, ScrollView, View as RNView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BarChart3, Check, ChevronRight, MessageCircle } from 'lucide-react-native';
+import {
+  BarChart3,
+  Check,
+  ChevronRight,
+  Hammer,
+  HandHelping,
+  MessageCircle,
+  Utensils,
+  Wrench,
+} from 'lucide-react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSondages } from '@/hooks/useSondages';
+import { useEntraide } from '@/hooks/useEntraide';
 import type { Sondage, SondageOption } from '@/fixtures/sondages';
+import type { EntraideCategorie, EntraideOffer } from '@/fixtures/entraide';
+import { ENTRAIDE_CATEGORIES } from '@/fixtures/entraide';
 import { MOCK_PANNEAU, MOCK_FIL_ACTUALITE, MOCK_CONVERSATIONS_V2 } from '@/fixtures/copro';
 import { Avatar } from '@/components/ui/Avatar';
 import { GradientCard } from '@/components/ui/GradientCard';
 import { SectionLabel } from '@/components/ui/SectionLabel';
 import { ListRow, RowSeparator } from '@/components/ui/ListRow';
+import { PulsingDot } from '@/components/ui/PulsingDot';
 import { TabSlideTransition } from '@/components/ui/TabSlideTransition';
+import { useCopro } from '@/hooks/useCopro';
 
-type CoproTab = 'annonces' | 'sondages' | 'messages';
+type CoproTab = 'annonces' | 'sondages' | 'entraide' | 'messages';
+
+const ENTRAIDE_ICONS = {
+  wrench: Wrench,
+  utensils: Utensils,
+  hammer: Hammer,
+  'hand-helping': HandHelping,
+};
 
 function SegmentedTabs({
   active,
@@ -27,7 +48,7 @@ function SegmentedTabs({
   const tabs: { key: CoproTab; label: string }[] = [
     { key: 'annonces', label: 'Annonces' },
     { key: 'sondages', label: 'Sondages' },
-    { key: 'messages', label: 'Messagerie' },
+    { key: 'entraide', label: 'Entraide' },
   ];
   return (
     <XStack backgroundColor={colors.surface.card} borderRadius={999} padding={4} role="tablist">
@@ -424,6 +445,217 @@ function SondagesTab() {
   );
 }
 
+function OfferCard({ offer, onDemander }: { offer: EntraideOffer; onDemander: () => void }) {
+  const colors = useThemeColors();
+  const router = useRouter();
+  const Icon = ENTRAIDE_ICONS[offer.icon];
+  const emprunte = offer.statut === 'emprunte';
+
+  return (
+    <YStack
+      backgroundColor={colors.surface.card}
+      borderRadius={22}
+      padding={18}
+      gap={12}
+      opacity={emprunte ? 0.7 : 1}
+      onPress={
+        emprunte
+          ? undefined
+          : () => router.push({ pathname: '/entraide-fiche', params: { id: offer.id } })
+      }
+      pressStyle={emprunte ? {} : { scale: 0.99 }}
+      role="button"
+      aria-label={offer.titre}
+    >
+      <XStack alignItems="center" gap={12}>
+        <View
+          width={44}
+          height={44}
+          borderRadius={14}
+          backgroundColor={colors.white}
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Icon size={20} color={colors.primary[500]} strokeWidth={1.8} />
+        </View>
+        <YStack flex={1}>
+          <Text fontFamily="$heading" fontSize={15} fontWeight="700" color={colors.text.primary}>
+            {offer.titre}
+          </Text>
+          <Text fontFamily="$body" fontSize={13} fontWeight="400" color={colors.text.muted}>
+            {offer.proprietaire.nom} · {offer.proprietaire.etage} · {offer.condition}
+          </Text>
+        </YStack>
+      </XStack>
+      {emprunte ? (
+        <View
+          alignSelf="flex-start"
+          paddingHorizontal={12}
+          paddingVertical={6}
+          borderRadius={999}
+          backgroundColor={colors.surface.empty}
+        >
+          <Text fontFamily="$body" fontSize={12} fontWeight="600" color={colors.text.muted}>
+            Emprunté
+          </Text>
+        </View>
+      ) : (
+        <View
+          alignSelf="flex-start"
+          paddingHorizontal={16}
+          paddingVertical={9}
+          borderRadius={999}
+          backgroundColor={offer.demandeEnvoyee ? colors.successBg : colors.primary[500]}
+          onPress={(e: { stopPropagation?: () => void }) => {
+            e?.stopPropagation?.();
+            if (!offer.demandeEnvoyee) onDemander();
+          }}
+          pressStyle={{ scale: 0.96 }}
+          role="button"
+          aria-label={offer.demandeEnvoyee ? 'Demande envoyée' : offer.ctaLabel}
+        >
+          <Text
+            fontFamily="$heading"
+            fontSize={13}
+            fontWeight="700"
+            color={offer.demandeEnvoyee ? colors.successText : colors.white}
+          >
+            {offer.demandeEnvoyee ? 'Demande envoyée' : offer.ctaLabel}
+          </Text>
+        </View>
+      )}
+    </YStack>
+  );
+}
+
+function EntraideTab() {
+  const colors = useThemeColors();
+  const router = useRouter();
+  const { offers, mesDemandes, demander } = useEntraide();
+  const [filter, setFilter] = useState<'Tout' | EntraideCategorie>('Tout');
+
+  const filtered = filter === 'Tout' ? offers : offers.filter((o) => o.categorie === filter);
+  const filterOptions: ('Tout' | EntraideCategorie)[] = ['Tout', ...ENTRAIDE_CATEGORIES];
+
+  return (
+    <YStack gap={24} paddingBottom={130}>
+      {/* CTA proposer un prêt */}
+      <GradientCard radius={24} padding={20}>
+        <XStack
+          alignItems="center"
+          gap={14}
+          onPress={() => router.push('/entraide-annonce')}
+          pressStyle={{ opacity: 0.8 }}
+          role="button"
+          aria-label="Proposer un prêt ou un coup de main"
+        >
+          <View
+            width={48}
+            height={48}
+            borderRadius={24}
+            backgroundColor={colors.white}
+            alignItems="center"
+            justifyContent="center"
+          >
+            <HandHelping size={22} color={colors.primary[500]} strokeWidth={1.8} />
+          </View>
+          <YStack flex={1}>
+            <Text fontFamily="$heading" fontSize={15} fontWeight="700" color={colors.primary[900]}>
+              Proposer un prêt ou un coup de main
+            </Text>
+            <Text fontFamily="$body" fontSize={13} fontWeight="400" color={colors.primary[600]}>
+              Outil, appareil, service…
+            </Text>
+          </YStack>
+          <ChevronRight size={16} color={colors.primary[600]} strokeWidth={2} />
+        </XStack>
+      </GradientCard>
+
+      {/* Chips de filtre */}
+      <XStack gap={8} flexWrap="wrap">
+        {filterOptions.map((cat) => {
+          const isActive = filter === cat;
+          return (
+            <View
+              key={cat}
+              paddingVertical={9}
+              paddingHorizontal={16}
+              borderRadius={999}
+              backgroundColor={isActive ? colors.primary[500] : colors.surface.card}
+              pressStyle={{ scale: 0.95 }}
+              onPress={() => setFilter(cat)}
+              role="radio"
+              aria-label={cat}
+              aria-selected={isActive}
+            >
+              <Text
+                fontFamily="$body"
+                fontSize={13}
+                fontWeight={isActive ? '600' : '500'}
+                color={isActive ? colors.white : colors.text.secondary}
+              >
+                {cat}
+              </Text>
+            </View>
+          );
+        })}
+      </XStack>
+
+      {/* Cartes d'offres */}
+      <YStack gap={12}>
+        {filtered.map((offer) => (
+          <OfferCard key={offer.id} offer={offer} onDemander={() => demander(offer.id)} />
+        ))}
+      </YStack>
+
+      {/* Mes prêts */}
+      <YStack gap={4}>
+        <XStack alignItems="center" justifyContent="space-between">
+          <SectionLabel marginBottom={0}>Mes prêts</SectionLabel>
+          <Text
+            fontFamily="$body"
+            fontSize={13}
+            fontWeight="600"
+            color={colors.primary[500]}
+            onPress={() => router.push('/entraide-gestion')}
+            role="link"
+            aria-label="Tout gérer"
+          >
+            Tout gérer
+          </Text>
+        </XStack>
+        {mesDemandes.map((demande, index) => (
+          <YStack key={demande.id}>
+            {index > 0 && <RowSeparator />}
+            <ListRow aria-label={demande.offerTitre}>
+              <YStack flex={1}>
+                <Text fontFamily="$body" fontSize={15} fontWeight="600" color={colors.text.primary}>
+                  {demande.offerTitre}
+                </Text>
+                <Text fontFamily="$body" fontSize={13} fontWeight="400" color={colors.text.muted}>
+                  {demande.dateLabel}
+                </Text>
+              </YStack>
+            </ListRow>
+          </YStack>
+        ))}
+      </YStack>
+
+      <Text
+        fontFamily="$body"
+        fontSize={12}
+        fontWeight="400"
+        color={colors.text.muted}
+        paddingHorizontal={8}
+        lineHeight={18}
+      >
+        Prêts de voisin à voisin, sans intervention du syndic. Vos coordonnées ne sont partagées
+        qu'après acceptation.
+      </Text>
+    </YStack>
+  );
+}
+
 function MessagesTab() {
   const colors = useThemeColors();
   const handleOpenConversation = (name: string) => {
@@ -535,6 +767,8 @@ function MessagesTab() {
 
 export default function CoproScreen() {
   const colors = useThemeColors();
+  const { conversations } = useCopro();
+  const hasUnread = conversations.some((c) => c.unread);
   const [tab, setTab] = useState<CoproTab>('annonces');
 
   return (
@@ -545,7 +779,13 @@ export default function CoproScreen() {
             contentContainerStyle={{ paddingBottom: 0 }}
             showsVerticalScrollIndicator={false}
           >
-            <YStack paddingHorizontal={24} paddingTop={20} paddingBottom={16}>
+            <XStack
+              paddingHorizontal={24}
+              paddingTop={20}
+              paddingBottom={16}
+              alignItems="center"
+              justifyContent="space-between"
+            >
               <Text
                 fontFamily="$heading"
                 fontSize={32}
@@ -556,14 +796,36 @@ export default function CoproScreen() {
               >
                 Copro
               </Text>
-            </YStack>
+              <View
+                width={40}
+                height={40}
+                borderRadius={20}
+                backgroundColor={colors.surface.card}
+                alignItems="center"
+                justifyContent="center"
+                position="relative"
+                pressStyle={{ scale: 0.9 }}
+                onPress={() => setTab('messages')}
+                role="button"
+                aria-label="Messagerie"
+              >
+                <MessageCircle size={18} color={colors.text.primary} strokeWidth={2} />
+                {hasUnread && (
+                  <View position="absolute" top={4} right={5}>
+                    <PulsingDot color={colors.primary[500]} size={7} pulse />
+                  </View>
+                )}
+              </View>
+            </XStack>
 
             <YStack paddingHorizontal={24} gap={24}>
-              <SegmentedTabs active={tab} onSwitch={setTab} />
+              <SegmentedTabs active={tab === 'messages' ? 'annonces' : tab} onSwitch={setTab} />
               {tab === 'annonces' ? (
                 <AnnoncesTab />
               ) : tab === 'sondages' ? (
                 <SondagesTab />
+              ) : tab === 'entraide' ? (
+                <EntraideTab />
               ) : (
                 <MessagesTab />
               )}

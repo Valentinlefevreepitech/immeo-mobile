@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { YStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, FileText, Megaphone, Wrench } from 'lucide-react-native';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRoleStore } from '@/stores/roleStore';
 import { getNotifications, type NotificationIcon } from '@/fixtures/notifications';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -11,17 +11,23 @@ import { SectionLabel } from '@/components/ui/SectionLabel';
 import { ListRow, RowSeparator } from '@/components/ui/ListRow';
 import { PageTransition } from '@/components/ui/PageTransition';
 
-const ICON_CONFIG: Record<NotificationIcon, { Icon: typeof Wrench; fg: string; bg: string }> = {
-  incident: { Icon: Wrench, fg: colors.info, bg: colors.infoBg },
-  ag: { Icon: Calendar, fg: colors.primary[500], bg: colors.primary[50] },
-  annonce: { Icon: Megaphone, fg: colors.text.muted, bg: colors.surface.card },
-  document: { Icon: FileText, fg: colors.text.muted, bg: colors.surface.card },
-};
+function getIconConfig(
+  colors: ReturnType<typeof useThemeColors>,
+): Record<NotificationIcon, { Icon: typeof Wrench; fg: string; bg: string }> {
+  return {
+    incident: { Icon: Wrench, fg: colors.info, bg: colors.infoBg },
+    ag: { Icon: Calendar, fg: colors.primary[500], bg: colors.primary[50] },
+    annonce: { Icon: Megaphone, fg: colors.text.muted, bg: colors.surface.card },
+    document: { Icon: FileText, fg: colors.text.muted, bg: colors.surface.card },
+  };
+}
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const role = useRoleStore((s) => s.role);
   const sections = getNotifications(role);
+  const iconConfig = getIconConfig(colors);
 
   return (
     <RNView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -42,7 +48,7 @@ export default function NotificationsScreen() {
                     <SectionLabel marginBottom={0}>{section.label}</SectionLabel>
                   </YStack>
                   {section.items.map((item, index) => {
-                    const { Icon, fg, bg } = ICON_CONFIG[item.icon];
+                    const { Icon, fg, bg } = iconConfig[item.icon];
                     return (
                       <YStack key={item.id}>
                         {index > 0 && <RowSeparator />}

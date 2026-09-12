@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronRight, Download, Upload } from 'lucide-react-native';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRoleStore } from '@/stores/roleStore';
 import {
   MOCK_DOCS_ALERTE,
@@ -18,6 +18,7 @@ import { PulsingDot } from '@/components/ui/PulsingDot';
 import { PageTransition } from '@/components/ui/PageTransition';
 
 function DocumentListRow({ doc, onPress }: { doc: MockDocument; onPress: () => void }) {
+  const colors = useThemeColors();
   return (
     <ListRow paddingVertical={12} onPress={onPress} aria-label={doc.title}>
       <YStack flex={1}>
@@ -39,6 +40,7 @@ function DocumentListRow({ doc, onPress }: { doc: MockDocument; onPress: () => v
 
 export default function DocumentsScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const role = useRoleStore((s) => s.role);
   const docsLot = getDocsLot(role);
 

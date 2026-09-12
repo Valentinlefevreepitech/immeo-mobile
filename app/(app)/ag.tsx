@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, View } from 'tamagui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Download } from 'lucide-react-native';
-import { colors } from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRoleStore } from '@/stores/roleStore';
 import { MOCK_AG, MOCK_AG_VOTE, MOCK_AG_DOCUMENTS } from '@/fixtures/ag';
 import { GradientCard } from '@/components/ui/GradientCard';
@@ -14,6 +14,7 @@ import { ListRow, RowSeparator } from '@/components/ui/ListRow';
 import { PageTransition } from '@/components/ui/PageTransition';
 
 function VoteBlock() {
+  const colors = useThemeColors();
   const [vote, setVote] = useState<string>('Pour');
 
   return (
@@ -85,6 +86,7 @@ function VoteBlock() {
 
 export default function AgScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const role = useRoleStore((s) => s.role);
 
   const handleDownload = (name: string) => {
